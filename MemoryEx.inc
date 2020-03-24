@@ -8,6 +8,7 @@
 	18.12.2019					Первый релиз [Windows Only]
 */
 
+
 #include <sdktools>
 
 #define Pointer Address
