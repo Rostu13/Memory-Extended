@@ -114,22 +114,11 @@ enum struct BaseMemory
 	}
 	int ReadString(char[] sString, int iMaxLength)
 	{
-		int x;
-		int iByte;
-
-		for(x = 0; x < iMaxLength; x++)
-		{
-			iByte = this.ReadByte(x);
-
-			if(iByte == 0x0)
-			{
-				break;
-			}
-
-			sString[x] = iByte;
-		}
-
-		return x;
+		return ReadString(this.GetAddr(), sString, iMaxLength);
+	}
+	int ReadUnicodeString(char[] sString, int iMaxLength)
+	{
+		return ReadUnicodeString(this.GetAddr(), sString, iMaxLength);
 	}
 	void WriteString(const char[] sString, bool bNull = true, int flags = MemoryEx_NoNeedAdd)
 	{
@@ -169,47 +158,5 @@ enum struct BaseMemory
 		{
 			this.Add(x + 0x02);
 		}
-	}
-	Pointer FindPattern(Pointer base, any size, const int[] pattern, int iLength, int iOffset = 0)
-	{
-		Pointer addr; // default = nullptr
-		Pointer end = base + size;
-
-		int iByte;
-		bool found;
-
-		while(base < end)
-		{
-			iByte = LoadFromAddress(base, NumberType_Int8);
-
-			if(iByte == pattern[0])
-			{
-				found = true;
-
-				for(int x = 1; x < iLength; x++)
-				{
-					if(pattern[x] != 0x2A)
-					{ 
-						iByte = LoadFromAddress(base + PTR(x), NumberType_Int8);
-
-						if(iByte != pattern[x])
-						{
-							found = false;
-							break;
-						}
-					}
-				}
-
-				if(found)
-				{
-					addr = base + PTR(iOffset);
-					break;
-				}
-			}
-
-			base++;
-		}
-
-		return addr;
 	}
 }

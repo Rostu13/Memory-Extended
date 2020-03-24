@@ -21,7 +21,6 @@ static const char g_sExts[][] =
 	".so",
 	".so"
 }
-
 enum struct DynamicLibrary
 {
     BaseMemory mem;
@@ -32,21 +31,12 @@ enum struct DynamicLibrary
 		if(this.hModules != null) delete this.hModules;
 		this.hModules = new StringMap();
 
-		OS os = GetServerOS();
-
-		ModuleInfo info;
-
-		if(os == OS_Windows)
-		{
-			info.base = GetServerDLLBase();
-			info.size = GetServerDLLSize();
-
-			this.hModules.SetArray("server", info, sizeof(ModuleInfo));
-		}
-		else if(os == OS_Linux)
-		{
-			this.InitModule("server");
-		}
+		this.InitModule("server");
+		this.InitModule("engine");		
+	}
+	StringMap GetListLibraries()
+	{
+		return GetServerOS() == OS_Windows ? WindowsGetDllList() : LinuxParseMapsFile();
 	}
 	Pointer InitModule(const char[] sNameLibrary)
 	{
@@ -58,7 +48,7 @@ enum struct DynamicLibrary
 		int iLengthExts = strlen(g_sExts[os]);
 		int iLengthName = iLength + iLengthExts + 1;
 
-		char[] sName = new char[iLengthName ];
+		char[] sName = new char[iLengthName];
 
 		strcopy(sName, iLengthName, sNameLibrary);
 
@@ -70,25 +60,11 @@ enum struct DynamicLibrary
 			}
 		}
 
-		if(os == OS_Windows)
+		StringMap list = this.GetListLibraries();
+
+		if(!list.GetArray(sName, info, sizeof(ModuleInfo)))
 		{
-			info.base = this.GetModuleHandle(sName);
-
-			if(info.base == nullptr)
-			{
-				return nullptr;
-			}
-
-			WindowsParsePEBHeader(info.base, info.size);
-		}
-		else if(os == OS_Linux)
-		{
-			StringMap list = LinuxParseMapsFile();
-
-			if(!list.GetArray(sName, info, sizeof(ModuleInfo)))
-			{
-				return nullptr;
-			}
+			return nullptr;
 		}
 
 		sName[strlen(sName) - iLengthExts] = '\0';
@@ -103,7 +79,7 @@ enum struct DynamicLibrary
 
 		return info.base;
 	}
-	int GetModuleSize(const char[] sName)
+	any GetModuleSize(const char[] sName)
 	{
 		ModuleInfo info;
 		this.hModules.GetArray(sName, info, sizeof(ModuleInfo));
@@ -120,82 +96,19 @@ enum struct DynamicLibrary
 
 	Pointer GetModuleHandle(const char[] name)
 	{
-		OS os = GetServerOS();
+		ModuleInfo info;
 
-		if(os == OS_Windows)
+		if(!this.hModules.GetArray(name, info, sizeof(ModuleInfo)))
 		{
-			/*
-				push [string address] 	
-				call dword ptr [GetModuleHandleW]
-				retn							
-			*/
-			
-
-			Pointer pKernelStr = this.FindUnicodeString("server", "kernel32.dll");
-			Pointer module = this.FindValue("server", pKernelStr, 0xFF)  + PTR(0x06);
-
-			Pointer ServerLibBase = GetServerDLLBase();
-			int ServerLibSize = GetServerDLLSize();
-
-			if(pKernelStr == nullptr || module == nullptr) 
-			{
-				ThrowError("GetModuleHandles failed -> Base = 0x%X pKernelStr 0x%X module 0x%X end = 0x%X", ServerLibBase, pKernelStr, module, ServerLibBase + PTR(ServerLibSize) );
-				return nullptr;
-			}
-
-			module = PTR(LoadFromAddress(module, NumberType_Int32));
-
-			//PrintToServer("GetModuleHandles suss -> Base = 0x%X pKernelStr 0x%X [offset 0x%X] module 0x%X [offset 0x%X] end = 0x%X", g_ServerDLL.base, pKernelStr, pKernelStr - g_ServerDLL.base, module, module - g_ServerDLL.base, g_ServerDLL.base + g_ServerDLL.size );
-
-			static int offsetForString = 0x10; // offset between string and function
-			static int offsetForEnd = 0x100; 
-
-			int iLengthStr = strlen(name);
-
-			this.mem.SetAddr((view_as<int>(ServerLibBase) + ServerLibSize) - offsetForEnd - offsetForString - (iLengthStr * 2)); // Address for string
-			Pointer pString = name[0] == '0' ? nullptr : this.mem.GetAddr();
-			
-			this.mem.WriteUnicodeString(name, _, MemoryEx_AddAfterWrite);
-			this.mem.Add( offsetForString);
-
-			Pointer pFunc = this.mem.GetAddr();
-
-			ASM.Set(pFunc);
-
-			ASM.Push(pString);
-			ASM.Call(module);
-			ASM.Retn();
-
-			StartPrepSDKCall(SDKCall_Static);
-			PrepSDKCall_SetAddress(pFunc);
-			PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
-			
-			Handle h = EndPrepSDKCall();
-			Pointer pRes = SDKCall(h);
-			
-			//PrintToServer("res = 0x%X", iRes);
-
-			delete h;
-			return pRes;
-		}
-		else if(os == OS_Linux)
-		{
-			ModuleInfo info;
+			this.InitModule(name);
 
 			if(!this.hModules.GetArray(name, info, sizeof(ModuleInfo)))
 			{
-				this.InitModule(name);
-
-				if(!this.hModules.GetArray(name, info, sizeof(ModuleInfo)))
-				{
-					return nullptr;
-				}
+				return nullptr;
 			}
-
-			return info.base;
 		}
 
-		return nullptr;
+		return info.base;
 	}
 
     Pointer GetProcAddress(const char[] sLibrary, const char[] sName)
@@ -269,7 +182,7 @@ enum struct DynamicLibrary
 
 		if(info.base == nullptr) return nullptr;
 
-		return this.mem.FindPattern(info.base, info.size, sPattern, iLength);
+		return FindPattern(info.base, info.size, sPattern, iLength, iOffset);
 	}
 	Pointer FindString(const char[] sModule, const char[] sString)
 	{
@@ -277,17 +190,11 @@ enum struct DynamicLibrary
 		info.base = this.GetBaseAddress(sModule);
 		info.size = this.GetModuleSize(sModule);
 
+		//PrintToServer("DynamicLibrary::findString sModule %s base [0x%X] size [0x%X] str = %s", sModule, info.base, info.size, sString);
+
 		if(info.base == nullptr) return nullptr;
 
-		int iLength = strlen(sString);
-		int[] pattern = new int[iLength];
-
-		for(int x = 0; x < iLength; x++)
-		{
-			pattern[x] = sString[x];
-		}
-
-		return this.mem.FindPattern(info.base, info.size, pattern, iLength);
+		return FindModuleString(info.base, info.size, sString);
 	}
 	Pointer FindUnicodeString(const char[] sModule, const char[] sString)
 	{
@@ -298,18 +205,7 @@ enum struct DynamicLibrary
 
 		if(info.base == nullptr) return nullptr;
 
-		int iLength = strlen(sString) * 2 ;
-		int[] pattern = new int[iLength];
-		int index;
-
-		for(int x = 0; x < iLength; x += 2)
-		{
-			pattern[x] = sString[index];
-			pattern[x + 1] = 0x00;
-			index++;
-		}
-
-		return this.mem.FindPattern(info.base, info.size, pattern, iLength);
+		return FindUnicodeModuleString(info.base, info.size, sString);
 	}
 	Pointer FindValue(const char[] sModule, any iValue, int iNextByte = 0x2A ) // iNextByte - to help
 	{
@@ -328,8 +224,17 @@ enum struct DynamicLibrary
 		pattern[3] = (iValue >> 24) & 0xFF;
 		pattern[4] = iNextByte;
 
-		//PrintToServer("FindValue pattern 0x%X 0x%X 0x%X 0x%X 0x%X", pattern[0], pattern[1], pattern[2], pattern[3], pattern[4] );
+		return FindPattern(info.base, info.size, pattern, 5);
+	}
+	Pointer FindValueEx(const char[] sModule, any iValue, const int[] iPattern, int iSize)
+	{
+		ModuleInfo info;
 
-		return this.mem.FindPattern(info.base, info.size, pattern, 5);
+		info.base = this.GetBaseAddress(sModule);
+		info.size = this.GetModuleSize(sModule);
+
+		if(info.base == nullptr) return nullptr;
+
+		return FindValue(info.base, info.size, iValue, iPattern, iSize);
 	}
 }

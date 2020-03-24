@@ -3,7 +3,7 @@
 #endif
 #define _MemoryEx_CallConvention_include_
 
-/*
+
 
 enum ParamTypeEx
 {
@@ -54,5 +54,3 @@ enum struct cdecl //base
     }
     
 }
-
-*/
