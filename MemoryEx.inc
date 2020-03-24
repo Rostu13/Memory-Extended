@@ -6,8 +6,8 @@
 				Версия: 1.0
 
 	18.12.2019					Первый релиз [Windows Only]
+	22.12.2019					Версия 1.1 [Windows Only]
 */
-
 
 #include <sdktools>
 
@@ -356,6 +356,33 @@ enum struct MemoryEx
 
 		return true;
 	}
+	OS GetOS()
+	{
+		CHECKTOINIT(return OS_Unknown)
+
+		return this.os;
+	}
+	void GetWindowsVersion(int& iMajorVer, int& iMinorVer)
+	{
+		CHECKTOINIT(return)
+
+		if(this.os != OS_Windows)
+		{
+			iMajorVer = -1;
+			iMinorVer = -1;
+
+			return;
+		}
+
+		Pointer old = this.GetAddr();
+		
+		this.SetAddr(0x7FFE0000);
+		iMajorVer = this.ReadInt(0x26C);
+		iMinorVer = this.ReadInt(0x270);
+
+		this.SetAddr(old);
+	}
+	
 	void SetAddr(any address)
 	{
 		if(address < nullptr) 
@@ -413,7 +440,7 @@ enum struct MemoryEx
 		}	
 	}
 
-	bool InitModule(const char[] sName)
+	Pointer InitModule(const char[] sName)
 	{
 		ModuleInfo info;
 
@@ -421,7 +448,7 @@ enum struct MemoryEx
 
 		if(info.base == nullptr)
 		{
-			return false;
+			return nullptr;
 		}
 
 		int iOffset = LoadFromAddress(info.base + PTR(0x3C), NumberType_Int32); // NT headers start
@@ -429,19 +456,46 @@ enum struct MemoryEx
 
 		this.hModules.SetArray(sName, info, sizeof(ModuleInfo));
 
-		return true;
+		return info.base;
 	}
-	
+	Pointer GetBaseAddress(const char[] sName)
+	{
+		CHECKTOINIT(return nullptr)
+
+		ModuleInfo info;
+		this.hModules.GetArray(sName, info, sizeof(ModuleInfo));
+
+		return info.base;
+	}
+	int GetModuleSize(const char[] sName)
+	{
+		CHECKTOINIT(return -1)
+
+		ModuleInfo info;
+		this.hModules.GetArray(sName, info, sizeof(ModuleInfo));
+		
+		return info.size;
+	}
+	Pointer GetEndModule(const char[] sName)
+	{
+		CHECKTOINIT(return nullptr)
+
+		ModuleInfo info;
+		this.hModules.GetArray(sName, info, sizeof(ModuleInfo));
+
+		return (info.base + PTR(info.size));
+	}
+
 	Pointer GetModuleHandle(const char[] name)
 	{
+	
 		/*
 			push [string address] 	
 			call dword ptr [GetModuleHandleW]
 			retn							
 		*/
-
 		CHECKTOINIT(return nullptr)
-
+		
 		this.ChangeSettings();
 		this.bSaveBytes = false;
 
@@ -465,18 +519,16 @@ enum struct MemoryEx
 		int iLengthStr = strlen(name);
 
 		this.SetAddr((view_as<int>(g_ServerDLL.base) + g_ServerDLL.size) - offsetForEnd - offsetForString - (iLengthStr * 2)); // Address for string
-		Pointer pString = this.GetAddr();
+		Pointer pString = name[0] == '0' ? nullptr : this.GetAddr();
 
-		this.SetAddr( this.WriteUnicodeString(name) + PTR(offsetForString));
-
-		//for(int x = -6; x <= sizeFunc; x++) this.WriteByte(0x90, x);
+		this.WriteUnicodeString(name, _, MemoryEx_AddAfterWrite);
+		this.Add( offsetForString);
 
 		Pointer pFunc = this.GetAddr();
 
-		//PrintToServer("WriteUnicode = pFunc 0x%X", this.GetAddr());
-
 		this.WriteByte(0x68, 	_, 	MemoryEx_AddAfterWrite);
 		this.WriteInt(pString,	_, 	MemoryEx_AddAfterWrite);
+
 		this.WriteWord(0x15FF,	_, 	MemoryEx_AddAfterWrite);
 		this.WriteInt(module,	_, 	MemoryEx_AddAfterWrite);
 		this.WriteByte(0xC3,	_,	MemoryEx_AddAfterWrite);
@@ -494,7 +546,73 @@ enum struct MemoryEx
 		
 		delete h;
 		return pRes;
-	}	
+	}
+	
+	Pointer GetProcAddress(const char[] sLibrary, const char[] sName)
+	{
+		
+		//.text:10228B59 010 68 58 BD 7F 10                          push    offset ProcName ; "InitializeCriticalSectionEx"
+		//.text:10228B5E 014 50                                      push    eax             ; hModule
+		//.text:10228B5F 018 FF 15 24 B0 78 10                       call    ds:GetProcAddress
+		
+		CHECKTOINIT(return nullptr)
+
+		this.ChangeSettings();
+		this.bSaveBytes = false;
+
+		//int iLengthStr = strlen(sName);
+
+		Pointer pStart;
+		Pointer pFunc;
+		Pointer base = this.GetBaseAddress(sLibrary);
+
+		if(this.os == OS_Windows)
+		{
+			Pointer pStr = this.FindString("server", "InitializeCriticalSectionEx");
+
+			pFunc = this.FindValue("server", pStr, 0x50) + PTR(0x07);
+
+			this.SetAddr(pFunc);
+			pFunc = PTR(this.ReadInt()); // read address GetProcAddress
+
+			this.SetAddr(this.GetEndModule("server") - PTR(0x250));
+			pStr = this.GetAddr();
+
+			this.WriteString(sName, _, MemoryEx_AddAfterWrite);
+			this.Add(0x10);
+
+			pStart = this.GetAddr();
+
+			this.WriteByte(0x68, 	_, MemoryEx_AddAfterWrite);
+			this.WriteInt(pStr, 	_, MemoryEx_AddAfterWrite);
+
+			this.WriteByte(0x68, 	_, MemoryEx_AddAfterWrite);
+			this.WriteInt(base, 	_, MemoryEx_AddAfterWrite);
+
+			this.WriteWord(0x15FF, 	_, MemoryEx_AddAfterWrite);
+			this.WriteInt(pFunc, 	_, MemoryEx_AddAfterWrite);
+			this.WriteByte(0xC3,	_,	MemoryEx_AddAfterWrite);
+		}
+		else
+		{
+			return nullptr;
+		}
+
+		StartPrepSDKCall(SDKCall_Static);
+		PrepSDKCall_SetAddress(pStart);
+		PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+		
+		Handle h = EndPrepSDKCall();
+		Pointer pRes = SDKCall(h);
+		
+		//PrintToServer("res pFunc = 0x%X, pStartFunc = 0x%X, proc = 0x%X", pFunc, pStart, pRes);
+
+		this.ChangeSettings(false);
+		
+		delete h;
+		return pRes;
+	}
+	
 	Pointer FindPattern(Pointer base, any size, const int[] pattern, int iLength, int iOffset = 0)
 	{
 		Pointer addr; // default = nullptr
@@ -540,30 +658,12 @@ enum struct MemoryEx
 
 		return addr;
 	}
-	Pointer GetBaseAddress(const char[] sName)
-	{
-		CHECKTOINIT(return nullptr)
-
-		ModuleInfo info;
-		this.hModules.GetArray(sName, info, sizeof(ModuleInfo));
-
-		return info.base;
-	}
-	int GetModuleSize(const char[] sName)
-	{
-		CHECKTOINIT(return -1)
-
-		ModuleInfo info;
-		this.hModules.GetArray(sName, info, sizeof(ModuleInfo));
-		
-		return info.size;
-	}
 
 	int ReadByte(int iOffset = 0)
 	{
 		return LoadFromAddress(this.pAddrBase + PTR(iOffset), NumberType_Int8);
 	}
-	Pointer WriteByte(any iByte, int iOffset = 0,  int flags = MemoryEx_NoNeedAdd)
+	void WriteByte(any iByte, int iOffset = 0,  int flags = MemoryEx_NoNeedAdd)
 	{
 		Pointer addr = this.GetAddr() + PTR(iOffset);
 
@@ -583,15 +683,13 @@ enum struct MemoryEx
 		{
 			this.Add(0x01);
 		}
-
-		return this.GetAddr();
 	}
 	
 	int ReadWord(int iOffset = 0)
 	{
 		return LoadFromAddress(this.pAddrBase + PTR(iOffset), NumberType_Int16);
 	}
-	Pointer WriteWord(any iWord, int iOffset = 0,  int flags = MemoryEx_NoNeedAdd)
+	void WriteWord(any iWord, int iOffset = 0,  int flags = MemoryEx_NoNeedAdd)
 	{
 		Pointer addr = this.GetAddr() + PTR(iOffset);
 
@@ -611,15 +709,13 @@ enum struct MemoryEx
 		{
 			this.Add(0x02);
 		}
-
-		return this.GetAddr();
 	}
 	
 	int ReadInt	(int iOffset = 0)
 	{
 		return LoadFromAddress(this.pAddrBase + PTR(iOffset), NumberType_Int32);
 	}
-	Pointer WriteInt(any iNumber, int iOffset = 0, int flags = MemoryEx_NoNeedAdd)
+	void WriteInt(any iNumber, int iOffset = 0, int flags = MemoryEx_NoNeedAdd)
 	{
 		Pointer addr = this.GetAddr() + PTR(iOffset);
 
@@ -639,10 +735,8 @@ enum struct MemoryEx
 		{
 			this.Add(0x04);
 		}
-
-		return this.GetAddr();
 	}
-	Pointer WriteData(const int[] data, int iSize)
+	void WriteData(const int[] data, int iSize, int flags = MemoryEx_NoNeedAdd)
 	{
 		int x;
 
@@ -651,13 +745,17 @@ enum struct MemoryEx
 			this.WriteByte(data[x], x);
 		}
 
-		return this.GetAddr() + PTR(x);
+		if(flags & MemoryEx_AddAfterWrite)
+		{
+			this.Add(x);
+		}
 	}
-	void ReadString(char[] sString, int iMaxLength)
+	int ReadString(char[] sString, int iMaxLength)
 	{
+		int x;
 		int iByte;
 
-		for(int x = 0; x < iMaxLength; x++)
+		for(x = 0; x < iMaxLength; x++)
 		{
 			iByte = this.ReadByte(x);
 
@@ -668,8 +766,10 @@ enum struct MemoryEx
 
 			sString[x] = iByte;
 		}
+
+		return x;
 	}
-	Pointer WriteString(const char[] sString, bool bNull = true)
+	void WriteString(const char[] sString, bool bNull = true, int flags = MemoryEx_NoNeedAdd)
 	{
 		int x;
 		for(x = 0; x < strlen(sString) ; x++)
@@ -679,12 +779,15 @@ enum struct MemoryEx
 
 		if(bNull)
 		{
-			this.WriteByte(0x00, ++x);
+			this.WriteByte(0x00, x);
 		}
 
-		return this.GetAddr() + PTR(x);
+		if(flags & MemoryEx_AddAfterWrite)
+		{
+			this.Add(x);
+		}
 	}
-	Pointer WriteUnicodeString(const char[] sString, bool bNull = true)
+	void WriteUnicodeString(const char[] sString, bool bNull = true, int flags = MemoryEx_NoNeedAdd)
 	{
 		int x;
 		int index;
@@ -708,35 +811,15 @@ enum struct MemoryEx
 
 		if(bNull)
 		{
-			x+= 2;
-			this.WriteByte(0x00, x);
+			this.WriteWord(0x00, x);
 		}
 
-		return this.GetAddr() + PTR(x);
-	}
-	OS GetOS()
-	{
-		CHECKTOINIT(return OS_Unknown)
-
-		return this.os;
-	}
-	void GetWindowsVersion(int& iMajorVer, int& iMinorVer)
-	{
-		CHECKTOINIT(return)
-
-		if(this.os != OS_Windows)
+		if(flags & MemoryEx_AddAfterWrite)
 		{
-			iMajorVer = -1;
-			iMinorVer = -1;
-
-			return;
+			this.Add(x + 0x02);
 		}
-		
-		this.SetAddr(0x7FFE0000);
-		iMajorVer = this.ReadInt(0x26C);
-		iMinorVer = this.ReadInt(0x270);
 	}
-	Pointer FindString(const char[] sModule, const char[] sString, bool bUnicode = false)
+	Pointer FindString(const char[] sModule, const char[] sString)
 	{
 		CHECKTOINIT(return nullptr)
 
@@ -805,6 +888,8 @@ enum struct MemoryEx
 		return this.FindPattern(info.base, info.size, pattern, 5);
 	}
 }
+
+
 
 //-----------------------STOCK--------------------------------------
 stock int HexToDec(const char[] hex)
