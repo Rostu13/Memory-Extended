@@ -15,7 +15,7 @@
 #include <MemoryEx/BaseMemory>
 #include <MemoryEx/ASM_Instruction>
 #include <MemoryEx/DynamicLibrary>
-
+//dev
 enum struct MemoryEx
 {
 	BaseMemory mem;
