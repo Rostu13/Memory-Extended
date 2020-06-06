@@ -135,3 +135,19 @@ stock Address GetProcAddress(const char[] sLibrary, const char[] sName )
 
 	return GetServerOS() == OS_Windows ? GetProcAddressWindows(pBase, sName) : GetProcAddressLinux(pBase, sName);
 }
+stock Address GetImportAddress(const char[] sLibrary, const char[] sName )
+{
+	if(GetServerOS() == OS_Windows)
+	{
+		Address pBase = GetModuleHandle(sLibrary);
+
+		if(pBase == Address_Null)
+		{
+			return Address_Null;
+		}
+
+		return GetImportAddressWindows(pBase, sName);
+	}
+
+	return GetImportAddressLinux(sName);
+}

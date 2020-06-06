@@ -210,3 +210,31 @@ stock Address GetProcAddressLinux(Address pBase, const char[] sName )
 
     return Address_Null;
 }
+stock Address GetImportAddressLinux(const char[] sName )
+{
+    StringMap hList = LinuxParseMapsFile();
+    StringMapSnapshot hSnap = hList.Snapshot();
+
+    Address pAddress;
+
+    char sLibrary[64];
+
+    LibraryInfo info;
+
+    for(int x = 0; x < hSnap.Length; x++)
+    {
+        hSnap.GetKey(x, sLibrary, sizeof sLibrary);
+        hList.GetArray(sLibrary, info, sizeof(LibraryInfo));
+
+        pAddress = GetProcAddressLinux(info.base, sName);
+
+        if(pAddress != Address_Null)
+        {
+            delete hSnap;
+            return pAddress;
+        }
+    }
+
+    delete hSnap;
+    return Address_Null;
+}

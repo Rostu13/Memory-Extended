@@ -12,14 +12,14 @@
 	05.05.2020					Version 2.7 [Export/Import Tables]
 */
 
-// #define MEMORY_EX_DBG
+#define MEMORY_EX_DBG
 
 #include <MemoryEx/ServerLibrary>
 #include <MemoryEx/BaseMemory>
 #include <MemoryEx/ASM_Instruction>
 #include <MemoryEx/DynamicLibrary>
 
-#if defined MEMORY_EX_DGB
+#if defined MEMORY_EX_DBG
 #include <MemoryEx/DbgFunctions>
 #endif
 
