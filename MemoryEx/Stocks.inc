@@ -16,6 +16,10 @@ stock any ASMSDKCall(Address base)
     delete h;
     return res;
 }
+stock Address LoadFromAddressEx(Address addr, NumberType size)
+{
+	return view_as<Address>(LoadFromAddress(addr, size));
+}
 stock int ReadString(Address base, char[] sResult, int iMaxLength)
 {
     int x;
@@ -27,11 +31,13 @@ stock int ReadString(Address base, char[] sResult, int iMaxLength)
 
         if(iByte == 0x0)
         {
+            sResult[x] = '\0';
             break;
         }
 
         sResult[x] = iByte;
     }
+
 
     return x;
 }
@@ -54,6 +60,21 @@ stock int ReadUnicodeString(Address base, char[] sResult, int iMaxLength)
     }
 
     return iOffset;
+}
+stock int WriteString(Address base, const char[] sString, bool bNull = true)
+{
+    int x;
+    for(x = 0; x < strlen(sString) ; x++)
+    {
+        StoreToAddress(base + view_as<Address>(x), sString[x], NumberType_Int8);
+    }
+
+    if(bNull)
+    {
+        StoreToAddress(base + view_as<Address>(x), sString[x], NumberType_Int8);
+    }
+
+    return x;
 }
 stock Address FindModuleString(Address base, any size, const char[] sString)
 {
@@ -107,6 +128,27 @@ stock Address FindValue(Address base, any size, any iValue, const int[] iHelpByt
     }
 
     return FindPattern(base, size, pattern, 3 + iSize); // 4 + iSize - 1
+}
+stock void DumpOnAddress(Address addr, int len, int columns = 10)
+{
+    char buff[128];
+
+    LogError("----------------------DumpOnAddress----------------------");
+    Format(buff, sizeof(buff), "[0x%08X]", addr);
+    for(int i = 0; i < len; i++)
+    {
+        Format(buff, sizeof(buff), "%s %02X", buff, LoadFromAddress(addr + view_as<Address>(i), NumberType_Int8));
+        if(i % columns == columns - 1)
+        {
+            LogError("%s", buff);
+            Format(buff, sizeof(buff), "[0x%08X]", addr + view_as<Address>(i));
+        }
+    }
+
+    if((len - 1) % columns != columns - 1)
+        LogError("%s", buff);
+
+    LogError("---------------------EndDumpOnAddress---------------------");
 }
 stock Address FindPattern(Address base, any size, const int[] pattern, int iLength, int iOffset = 0)
 {

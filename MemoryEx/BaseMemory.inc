@@ -122,20 +122,11 @@ enum struct BaseMemory
 	}
 	void WriteString(const char[] sString, bool bNull = true, int flags = MemoryEx_NoNeedAdd)
 	{
-		int x;
-		for(x = 0; x < strlen(sString) ; x++)
-		{
-			this.WriteByte(sString[x], x);
-		}
-
-		if(bNull)
-		{
-			this.WriteByte(0x00, x);
-		}
+		int add = WriteString(this.GetAddr(), sString, bNull);
 
 		if(flags & MemoryEx_AddAfterWrite)
 		{
-			this.Add(x);
+			this.Add(add);
 		}
 	}
 	void WriteUnicodeString(const char[] sString, bool bNull = true, int flags = MemoryEx_NoNeedAdd)

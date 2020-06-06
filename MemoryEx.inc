@@ -3,28 +3,31 @@
 				Memory Extendвd
 
 	Author: Rostu 				[vk.com/rostu13 | Discord: Rostu#7917]
-	Version: 					2.5
+	Version: 					2.7
 
 	18.12.2019					First release [Windows Only]
 	22.12.2019					Version 1.1 [Windows Only]
 	19.01.2020					Version 2.0 Windows + linux [x86 only]
 	20.03.2020					Version 2.5 [All Source Games]
+	05.05.2020					Version 2.7 [Export/Import Tables]
 */
+
+// #define MEMORY_EX_DBG
 
 #include <MemoryEx/ServerLibrary>
 #include <MemoryEx/BaseMemory>
 #include <MemoryEx/ASM_Instruction>
 #include <MemoryEx/DynamicLibrary>
 
+#if defined MEMORY_EX_DGB
+#include <MemoryEx/DbgFunctions>
+#endif
+
 enum struct MemoryEx
 {
 	BaseMemory mem;
 	DynamicLibrary lib;
 
-	void Init()
-	{
-		this.lib.Init();
-	}
 	void SetAddr(any address)
 	{
 		this.mem.SetAddr(address);
@@ -83,13 +86,9 @@ enum struct MemoryEx
 	{
 		return this.lib.GetListLibraries();
 	}
-	Pointer InitModule(const char[] sNameLibrary)
+	Pointer GetModuleHandle(const char[] sName)
 	{
-		return this.lib.InitModule(sNameLibrary);
-	}
-	Pointer GetBaseAddress(const char[] sName)
-	{
-		return this.lib.GetBaseAddress(sName);
+		return this.lib.GetModuleHandle(sName);
 	}
 	any GetModuleSize(const char[] sName)
 	{
@@ -98,10 +97,6 @@ enum struct MemoryEx
 	Pointer GetEndModule(const char[] sName)
 	{
 		return this.lib.GetEndModule(sName);
-	}
-	Pointer GetModuleHandle(const char[] name)
-	{
-		return this.lib.GetModuleHandle(name);
 	}
 	Pointer GetProcAddress(const char[] sLibrary, const char[] sName)
 	{
@@ -127,5 +122,6 @@ enum struct MemoryEx
 	{
 		return this.lib.FindValueEx(sModule, iValue, iPattern, iSize);
 	}
-
 }
+
+stock MemoryEx g_hMem;

@@ -76,7 +76,7 @@ stock StringMap LinuxParseMapsFile(bool bRefresh = false)
 
         FormatEx(sBaseAddress, 9, "%s", sBuffer);
         info.base = view_as<Address>(HexToDec(sBaseAddress));
-
+        
         if(ParseElfHeader(info.base, info.size))
         {
             list.SetArray(sName, info, sizeof(LibraryInfo));
@@ -87,8 +87,19 @@ stock StringMap LinuxParseMapsFile(bool bRefresh = false)
     return list;
 }
 
+stock Address GetFirstElfTable(Address base)
+{
+    return view_as<Address>(LoadFromAddress(base + view_as<Address>(0x1C), NumberType_Int32)); // <= e_phoff;
+}
+stock int GetElfTableSize(Address base)
+{
+    return LoadFromAddress(base + view_as<Address>(0x2A), NumberType_Int16); // <= e_phentsize
+}
+stock int GetCountElfTable(Address base)
+{
+    return LoadFromAddress(base + view_as<Address>(0x2C), NumberType_Int16); // <= e_phnum;
+}
 //https://wikipedia.org/wiki/Executable_and_Linkable_Format
-
 static stock bool ParseElfHeader(Address base, int& iSize)
 {
     bool isELF = view_as<bool>(LoadFromAddress(base, NumberType_Int32) == 0x464C457F);
@@ -99,9 +110,9 @@ static stock bool ParseElfHeader(Address base, int& iSize)
         return false;
     }
 
-    int iFirstPHTable   = LoadFromAddress(base + view_as<Address>(0x1C), NumberType_Int32); // <= e_phoff
-    int iPHTableSize    = LoadFromAddress(base + view_as<Address>(0x2A), NumberType_Int16); // <= e_phentsize
-    int iCountPHTable   = LoadFromAddress(base + view_as<Address>(0x2C), NumberType_Int16); // <= e_phnum
+    Address pFirstPHTable   = LoadFromAddressEx(base + view_as<Address>(0x1C), NumberType_Int32); // <= e_phoff
+    int iPHTableSize        = GetElfTableSize(base);
+    int iCountPHTable       = GetCountElfTable(base);
 
     Address iStartAddress;
 
@@ -110,7 +121,7 @@ static stock bool ParseElfHeader(Address base, int& iSize)
 
     for(int x = 0; x < iCountPHTable; x++)
     {
-        iStartAddress = base + view_as<Address>(iFirstPHTable + (iPHTableSize * x));
+        iStartAddress = base + pFirstPHTable + view_as<Address>(iPHTableSize * x);
         iType = LoadFromAddress(iStartAddress, NumberType_Int32);
 
         if(iType != 1) // 1 == PT_LOAD
@@ -129,4 +140,73 @@ static stock bool ParseElfHeader(Address base, int& iSize)
 
     return true;
     
+}
+stock Address GetProcAddressLinux(Address pBase, const char[] sName )
+{
+     //From MemoryEx/LinuxFunction/ParseElfHeader
+    Address pFirstTable = GetFirstElfTable(pBase);
+    int iPHTableSize    = GetElfTableSize(pBase);
+    int iCountPHTable   = GetCountElfTable(pBase);
+
+    Address iStartAddress;
+    Address pDynamic;
+
+    int iType;
+
+    for(int x = 0; x < iCountPHTable; x++)
+    {
+        iStartAddress = pBase + pFirstTable + view_as<Address>(iPHTableSize * x);
+        iType = LoadFromAddress(iStartAddress, NumberType_Int32);
+
+        if(iType != 2) // 2 == PT_DYNAMIC
+        {
+            continue;
+        }
+
+        pDynamic = pBase + LoadFromAddressEx(iStartAddress + view_as<Address>(0x08), NumberType_Int32); // p_vaddr
+        break;
+    }
+
+    //DumpOnAddress(pDynamic, 0xE8, 8);
+
+    Address offset;
+    Address pStrTab;
+    Address pSymTab;
+    Address pStr;
+
+    while((iType = LoadFromAddress(pDynamic + offset, NumberType_Int32)) != 0)
+    {
+        switch(iType)
+        {
+            case 0x05: pStrTab  = LoadFromAddressEx(pDynamic + offset + view_as<Address>(0x04), NumberType_Int32);
+            case 0x06: pSymTab  = LoadFromAddressEx(pDynamic + offset + view_as<Address>(0x04), NumberType_Int32); 
+        }
+        offset += view_as<Address>(0x08);
+    }
+
+    char sStr[256];
+
+    int iSize = view_as<int>(pStrTab - pSymTab) / 0x10;
+    int iLen = strlen(sName);
+    int iLenStr;
+
+    //DumpOnAddress(pSymTab, 0x100, 16);
+
+    for(int x = 0; x < iSize; x++)
+    {
+        pStr = pStrTab + LoadFromAddressEx(pSymTab, NumberType_Int32);
+        iLenStr = ReadString(pStr, sStr, sizeof sStr);
+
+        if(iLen == iLenStr)
+        {
+            if(!strcmp(sName, sStr))
+            {
+                return pBase + LoadFromAddressEx(pSymTab + view_as<Address>(0x04), NumberType_Int32);
+            }
+        }
+
+        pSymTab += view_as<Address>(0x10);
+    }
+
+    return Address_Null;
 }
