@@ -228,7 +228,7 @@ stock Address GetImportAddressLinux(const char[] sName )
 
         pAddress = GetProcAddressLinux(info.base, sName);
 
-        if(pAddress != Address_Null)
+        if(pAddress != Address_Null && pAddress != info.base)
         {
             delete hSnap;
             return pAddress;

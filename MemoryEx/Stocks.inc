@@ -258,7 +258,6 @@ stock int HexToDec(const char[] hex)
     }
     return result;
 }
- 
 stock int IsHexSymbol(int ch)
 {
     if(!ch)
@@ -272,4 +271,24 @@ stock int IsHexSymbol(int ch)
         return ch - 'A' + 10;
     
     return -1;
+}
+stock bool StrContainsEx(const char[] sStr, const char[] sSubStr)
+{
+    int iLen = strlen(sStr);
+    int iSubLen = strlen(sSubStr);
+
+    if(iLen < iSubLen)
+    {
+        return false;
+    }
+
+    for(int x = 0; x < iSubLen; x++)
+    {
+        if(sStr[x] != sSubStr[x])
+        {
+            return false;
+        }
+    }
+
+    return true;
 }

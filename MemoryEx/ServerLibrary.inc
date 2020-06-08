@@ -34,6 +34,13 @@ enum OS
 	OS_Linux,
 	OS_Mac
 }
+enum
+{
+	FindModuleRes_None,
+
+	FindModuleRes_OK,
+	FindModuleRes_More // If two or more modules are found
+}
 
 stock OS GetServerOS()
 {
@@ -150,4 +157,38 @@ stock Address GetImportAddress(const char[] sLibrary, const char[] sName )
 	}
 
 	return GetImportAddressLinux(sName);
+}
+stock int FindModule(const char[] sModule, char[] sResult, int iMaxLength)
+{
+	StringMap hList = GetListLibraries();
+	StringMapSnapshot hSnap = hList.Snapshot();
+
+	char sName[64];
+	int res = FindModuleRes_None;
+
+	ModuleInfo info;
+
+	for(int x = 0; x < hSnap.Length; x++)
+	{
+		hSnap.GetKey(x, sName, sizeof sName);
+		hList.GetArray(sName, info, sizeof(ModuleInfo));
+
+		if(StrContainsEx(sName, sModule))
+		{
+			if(res == FindModuleRes_None)
+			{
+				res = FindModuleRes_OK;
+			}
+			else
+			{
+				res = FindModuleRes_More;
+			}
+
+			strcopy(sResult, iMaxLength, sName);
+		}
+
+	}
+
+	delete hSnap;
+	return res;
 }

@@ -1,108 +1,88 @@
-
+#if defined _MemoryEx_MemoryAlloc_include_
+  #endinput
+#endif
+#define _MemoryEx_MemoryAlloc_include_
 
 #include <MemoryEx/ServerLibrary>
 
-
-stock Address GetAddresAlloc()
-{
-    static Address base;
-
-    if(base != Address_Null)
-    {
-        return base;
-    }
-
-    Address server = GetModuleHandle("server");
-    any size = GetModuleSize("server");
-    Address pStr = FindModuleString(server, size, "Line %d at \"%s\": %s");
-
-    PrintToServer("server = 0x%X size = 0x%X pStr = 0x%X", server, size, pStr);
-
-    static int iHelps[] = { 0x50, 0xE8};
-    static int iLocal[] = {0x52, 0x8B, 0x08, 0x8B, 0x01, 0xFF};
-
-    Address pFunc = FindValue(server, size, pStr, iHelps, sizeof(iHelps));
-    Address pAdr = FindPattern(pFunc, 0x100, iLocal, sizeof(iLocal), -0x04);
-    Address adr1 = LoadFromAddress(pAdr, NumberType_Int32); //   mov     eax, ds:g_pMemAlloc
-    Address adr2 = LoadFromAddress(adr1, NumberType_Int32); ////   mov     eax, ds:g_pMemAlloc
-    Address adr3 = LoadFromAddress(adr2, NumberType_Int32); // mov     ecx, [eax]
-    Address adr4 = LoadFromAddress(adr3, NumberType_Int32); // mov     eax, [ecx]
-    Address final = LoadFromAddress(adr4 + 0x04, NumberType_Int32); // [eax+4]
-    PrintToServer("GetAddressAlloc 0x%X pFunc= 0x%X pAdr = 0x%X adr1 = 0x%X  adr2 = 0x%X adr3 = 0x%X adr4 = 0x%X final = 0x%X", pStr, pFunc, pAdr, adr1, adr2, adr3, adr4, final);
-   //base = LoadFromAddress(LoadFromAddress(LoadFromAddress(pAdr, NumberType_Int32), NumberType_Int32) + 0x04, NumberType_Int32);
-
-    return adr4;
-
-}
 stock Address VirtualAlloc(int iSize)
 {
     static Address pFunc;
+    static Handle h;
 
     if(pFunc == Address_Null)
     {
         if(GetServerOS() == OS_Windows)
         {
-            //pFunc = GetProcAddress("kernel32", "VirtualAlloc");
+            pFunc = GetProcAddress("tier0", "g_pMemAlloc");
+            if(pFunc != Address_Null)
+            {
+                pFunc = LoadFromAddressEx(pFunc, NumberType_Int32);
+                StartPrepSDKCall(SDKCall_Raw);
+                PrepSDKCall_SetVirtual(1);
+                PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+                PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+                h = EndPrepSDKCall();
+            }
         }
         else
         {
-            pFunc = GetProcAddress("kernel32", "VirtualAlloc");
+            pFunc = GetImportAddress(NULL_STRING, "malloc");
+
+            StartPrepSDKCall(SDKCall_Static);
+            PrepSDKCall_SetAddress(pFunc);
+            PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+            PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+            h = EndPrepSDKCall();
+
         }
     }
-}
-stock void ReAllocMemory(Address base, int iSize)
-{
-    
-}
-stock void FreeMemory(Address base)
-{
 
-}
-enum struct MemInfo
-{
-    Address base;
-    int iSize;
-}
-enum struct MemAlloc
-{
-    ArrayList mems;
-
-    void Init()
+    if(GetServerOS() == OS_Windows)
     {
-        if(this.mems != null)
-        {
-            MemInfo info;
+        return SDKCall(h, pFunc, iSize);
+    }
 
-            for(int x = 0; x < this.mems.Length; x++)
+    return SDKCall(h, iSize);
+}
+
+stock void FreeMemory(Address pBase)
+{
+    static Address pFunc;
+    static Handle h;
+
+    if(pFunc == Address_Null)
+    {
+        if(GetServerOS() == OS_Windows)
+        {
+            pFunc = GetProcAddress("tier0", "g_pMemAlloc");
+            if(pFunc != Address_Null)
             {
-                this.mems.GetArray(x, info, sizeof(MemInfo));
-                this.Free(info.base);
+                pFunc = LoadFromAddressEx(pFunc, NumberType_Int32);
+                StartPrepSDKCall(SDKCall_Raw);
+                PrepSDKCall_SetVirtual(4);
+                PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+                h = EndPrepSDKCall();
             }
-
-            delete this.mems;
         }
-
-        this.mems = new ArrayList();
-    }
-
-    void AllocMemory(int iSize)
-    {
-        if(iSize < 0)
+        else
         {
-            return;
+            pFunc = GetImportAddress(NULL_STRING, "free");
+
+            StartPrepSDKCall(SDKCall_Static);
+            PrepSDKCall_SetAddress(pFunc);
+            PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+            h = EndPrepSDKCall();
+
         }
     }
-    void ReAlloc(Address adr, int iSize)
+
+    if(GetServerOS() == OS_Windows)
     {
-
+        SDKCall(h, pFunc, pBase);
     }
-    void Free(Address adr)
+    else
     {
-
+        SDKCall(h, pBase);
     }
-}
-
-stock void AllocMemory()
-{
-
 }

@@ -3,21 +3,23 @@
 				Memory Extendвd
 
 	Author: Rostu 				[vk.com/rostu13 | Discord: Rostu#7917]
-	Version: 					2.7
+	Version: 					3.0
 
 	18.12.2019					First release [Windows Only]
 	22.12.2019					Version 1.1 [Windows Only]
 	19.01.2020					Version 2.0 Windows + linux [x86 only]
 	20.03.2020					Version 2.5 [All Source Games]
 	05.05.2020					Version 2.7 [Export/Import Tables]
+	08.06.2020					Version 3.0 [malloc/free]
 */
 
-#define MEMORY_EX_DBG
+//#define MEMORY_EX_DBG
 
 #include <MemoryEx/ServerLibrary>
 #include <MemoryEx/BaseMemory>
 #include <MemoryEx/ASM_Instruction>
 #include <MemoryEx/DynamicLibrary>
+#include <MemoryEx/MemoryAlloc>
 
 #if defined MEMORY_EX_DBG
 #include <MemoryEx/DbgFunctions>
@@ -101,6 +103,14 @@ enum struct MemoryEx
 	Pointer GetProcAddress(const char[] sLibrary, const char[] sName)
 	{
 		return this.lib.GetProcAddress(sLibrary, sName);
+	}
+	Pointer GetImportAddress(const char[] sLibrary, const char[] sName)
+	{
+		return this.lib.GetImportAddress(sLibrary, sName);
+	}
+	int FindModule(const char[] sModule, char[] sResult, int iMaxLength)
+	{
+		return this.lib.FindModule(sModule, sResult, iMaxLength);
 	}
 	Pointer FindPattern(const char[] sModule, const int[] sPattern, int iLength, int iOffset = 0)
 	{

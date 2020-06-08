@@ -31,7 +31,14 @@ enum struct DynamicLibrary
 	{
 		return GetProcAddress(sLibrary, sName);
 	}
-	
+	Pointer GetImportAddress(const char[] sLibrary, const char[] sName)
+	{
+		return GetImportAddress(sLibrary, sName);
+	}
+	int FindModule(const char[] sModule, char[] sResult, int iMaxLength)
+	{
+		return FindModule(sModule, sResult, iMaxLength);
+	}
 	Pointer FindPattern(const char[] sModule, const int[] sPattern, int iLength, int iOffset = 0)
 	{
 		ModuleInfo info;
@@ -46,6 +53,7 @@ enum struct DynamicLibrary
 	Pointer FindString(const char[] sModule, const char[] sString)
 	{
 		ModuleInfo info;
+		
 		info.base = this.GetModuleHandle(sModule);
 		info.size = this.GetModuleSize(sModule);
 
