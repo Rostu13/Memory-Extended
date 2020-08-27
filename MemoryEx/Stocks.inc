@@ -78,13 +78,15 @@ stock int WriteString(Address base, const char[] sString, bool bNull = true)
 }
 stock Address FindModuleString(Address base, any size, const char[] sString)
 {
-    int iLength = strlen(sString);
+    int iLength = strlen(sString) + 1;
     int[] pattern = new int[iLength];
 
-    for(int x = 0; x < iLength; x++)
+    for(int x = 0; x < iLength - 1; x++)
     {
         pattern[x] = sString[x];
     }
+
+    pattern[iLength] = 0x00;
 
     return FindPattern(base, size, pattern, iLength);
 }
@@ -102,6 +104,39 @@ stock Address FindUnicodeModuleString(Address base, any size, const char[] sStri
     }
 
     return FindPattern(base, size, pattern, iLength);
+}
+stock ArrayList FindAllStrings(Address base, any size, const char[] sValue)
+{
+    ArrayList res = new ArrayList();
+
+    Address addr;
+
+    int iLength = strlen(sValue);
+    int[] pattern = new int[iLength];
+
+    for(int x = 0; x < strlen(sValue); x++)
+    {
+        pattern[x] = sValue[x];
+    }
+
+    //LogError("FindAllStrings start [0x%X] [%d]", base, size);
+
+    while((addr = FindPattern(base, size, pattern, iLength)) != Address_Null)
+    {
+        size -= view_as<int>(addr - base) + iLength;
+        base += addr - base + view_as<Address>(iLength);
+
+        // size 13
+        // base 4 length 4 start 8 size 6
+        //
+        // 0x00 0x00 0x00 0xFF 0xFF 0xFF 0xFF 0x00 0x00 0xFF 0xFF 0xFF 0xFF
+        // 0                3                   7
+        //LogError("FindAllStrings next [0x%X] [%d]", base, size);
+
+        res.Push(addr);
+    }
+
+    return res;
 }
 stock Address FindValue(Address base, any size, any iValue, const int[] iHelpBytes, int iSize)
 {
@@ -153,7 +188,9 @@ stock void DumpOnAddress(Address addr, int len, int columns = 10)
 stock Address FindPattern(Address base, any size, const int[] pattern, int iLength, int iOffset = 0)
 {
     Address addr; // default = nullptr
-    Address end = base + size;
+    Address end = base + view_as<Address>(size);
+
+    PrintToServer("FindPattern base 0x%X size 0x%X", base, size);
 
     int iByte;
     bool found;
@@ -188,6 +225,54 @@ stock Address FindPattern(Address base, any size, const int[] pattern, int iLeng
         }
 
         base++;
+    }
+
+    return addr;
+}
+stock Address FindBackPattern(Address base, any size, const int[] pattern, int iLength, int iOffset = 0)
+{
+    Address addr;
+    Address end = base - view_as<Address>(size);
+
+    int iByte;
+    Address offsetByte;
+    bool found;
+
+    //LogError("FindBackPattern base 0x%X, size 0x%X, end 0x%X Length %d", base, size, end, iLength);
+
+    while(base >= end)
+    {
+        iByte = LoadFromAddress(base, NumberType_Int8);
+        //LogError("FirstByte 0x%X|0x%X", iByte, pattern[iLength - 0x01]);
+
+        if(iByte == pattern[iLength - 0x01])
+        {
+            found = true;
+            offsetByte = view_as<Address>(0x01);
+
+            for(int x = iLength - 0x02; x >= 0; x--, offsetByte++)
+            {
+                //LogError("NextByte req byte [%d][0x%X] | Read [0x%X] byte [x%X] offset [%d]", x, pattern[x], base - view_as<Address>(offsetByte), LoadFromAddress(base - view_as<Address>(offsetByte), NumberType_Int8), offsetByte);
+                if(pattern[x] != 0x2A)
+                { 
+                    iByte = LoadFromAddress(base - view_as<Address>(offsetByte), NumberType_Int8);
+
+                    if(iByte != pattern[x])
+                    {
+                        found = false;
+                        break;
+                    }
+                }
+            }
+
+            if(found)
+            {
+                addr = base + view_as<Address>(-iLength + 0x01 + iOffset);
+                break;
+            }
+        }
+
+        base--;
     }
 
     return addr;

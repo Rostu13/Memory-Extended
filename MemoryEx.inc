@@ -11,8 +11,14 @@
 	20.03.2020					Version 2.5 [All Source Games]
 	05.05.2020					Version 2.7 [Export/Import Tables]
 	08.06.2020					Version 3.0 [malloc/free]
+	20.08.2020					Version 3.1 [PatternGenerator]
 */
+/*
+Добавлена stock функция FindAllStrings, которая возвращает адреса необходимых строк в ArrayList
+Добавлен новый inc MemoryEx/PatternGenerator.inc => Для удобной генерации сигнатур с меняющимеся значениями.
+Полная смена логика получения PEB адреса, спасибо самолетик за сообщение о крашах [CSS].
 
+*/
 //#define MEMORY_EX_DBG
 
 #include <MemoryEx/ServerLibrary>
@@ -119,6 +125,10 @@ enum struct MemoryEx
 	Pointer FindString(const char[] sModule, const char[] sString)
 	{
 		return this.lib.FindString(sModule, sString);
+	}
+	ArrayList FindAllStrings(const char[] sModule, const char[] sString)
+	{
+		return this.lib.FindAllStrings(sModule, sString);
 	}
 	Pointer FindUnicodeString(const char[] sModule, const char[] sString)
 	{

@@ -5,6 +5,7 @@
 #define _MemoryEx_WindowsFunction_include_
 
 #include <MemoryEx/Stocks>
+#include <MemoryEx/PatternGenerator>
 
 // for import table
 #define CALC_STRUCT_OFFSET(%0) view_as<Address>(%0 * 0x04)
@@ -25,7 +26,7 @@ stock void GetWindowsVersion(int& iMajorVer, int& iMinorVer)
 }
 stock Address GetPEB()
 {
-	static Address pPEB;
+    static Address pPEB;
 
 	static int PEBAsm[] =
 	{
@@ -37,20 +38,22 @@ stock Address GetPEB()
 	{
 		return pPEB;
 	}
+
+    int iOffset = FindSendPropInfo("CBaseEntity", "m_clrRender");
+
+    if(iOffset == -1)
+    {
+        SetFailState("hm... m_clrRender not found?");
+    }
 	
-	Address pFree = view_as<Address>(0x07FFD000 -  sizeof(PEBAsm)); // hmm... hack?
+	int iEntity = CreateEntityByName("trigger_push"); // `trigger_push is a brush entity available in all Source games.` =>  https://developer.valvesoftware.com/wiki/Trigger_push
+    Address pEntity = GetEntityAddress(iEntity) + view_as<Address>(iOffset);
 
-	for(int x = 0; x < sizeof(PEBAsm); x++)
-	{
-		StoreToAddress(pFree + view_as<Address>(x), PEBAsm[x], NumberType_Int8);
-	}
+    SetEntDataArray(iEntity, iOffset, PEBAsm, sizeof(PEBAsm), 1);
+    StoreToAddress(pEntity, PEBAsm[0], NumberType_Int8); // for => SourceHook::SetMemAccess(addr, sizeof(uint8_t), SH_MEM_READ|SH_MEM_WRITE|SH_MEM_EXEC);
 
-	pPEB = ASMSDKCall(pFree);
-
-	for(int y = 0;  y < sizeof(PEBAsm); y++) // free memory
-	{
-		StoreToAddress(pFree + view_as<Address>(y), 0x00, NumberType_Int8);
-	}
+    pPEB = ASMSDKCall(pEntity);
+    AcceptEntityInput(iEntity, "Kill");
 
 	return pPEB;
 }

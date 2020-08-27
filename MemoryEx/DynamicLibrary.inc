@@ -63,6 +63,17 @@ enum struct DynamicLibrary
 
 		return FindModuleString(info.base, info.size, sString);
 	}
+	ArrayList FindAllStrings(const char[] sModule, const char[] sString)
+	{
+		ModuleInfo info;
+		
+		info.base = this.GetModuleHandle(sModule);
+		info.size = this.GetModuleSize(sModule);
+
+		if(info.base == nullptr) return new ArrayList();
+
+		return FindAllStrings(info.base, info.size, sString);
+	}
 	Pointer FindUnicodeString(const char[] sModule, const char[] sString)
 	{
 		ModuleInfo info;

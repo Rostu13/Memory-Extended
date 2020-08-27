@@ -41,8 +41,6 @@ stock StringMap LinuxParseMapsFile(bool bRefresh = false)
         TrimString(sBuffer);
         iLength = strlen(sBuffer);
 
-        LogError(sBuffer);
-
         if(strcmp(sBuffer[iLength - 3], ".so") != 0)
         {
             continue;
@@ -81,6 +79,7 @@ stock StringMap LinuxParseMapsFile(bool bRefresh = false)
         
         if(ParseElfHeader(info.base, info.size))
         {
+            //LogError("generate module %s [0x%X]", sName, info.base);
             list.SetArray(sName, info, sizeof(LibraryInfo));
         }
     }
@@ -143,9 +142,9 @@ static stock bool ParseElfHeader(Address base, int& iSize)
     return true;
     
 }
-stock Address GetProcAddressLinux(Address pBase, const char[] sName )
+stock Address GetDynamicSectionLinux(Address pBase)
 {
-     //From MemoryEx/LinuxFunction/ParseElfHeader
+    //From MemoryEx/LinuxFunction/ParseElfHeader
     Address pFirstTable = GetFirstElfTable(pBase);
     int iPHTableSize    = GetElfTableSize(pBase);
     int iCountPHTable   = GetCountElfTable(pBase);
@@ -169,12 +168,65 @@ stock Address GetProcAddressLinux(Address pBase, const char[] sName )
         break;
     }
 
-    //DumpOnAddress(pDynamic, 0xE8, 8);
+    return pDynamic;
+}
+stock Address GetELFStringTableLinux(Address pBase)
+{
+    Address pDynamic = GetDynamicSectionLinux(pBase);
 
+    if(pDynamic == Address_Null)
+    {
+        return Address_Null;
+    }
+
+    Address offset;
+    int iType;
+
+    while((iType = LoadFromAddress(pDynamic + offset, NumberType_Int32)) != 0)
+    {
+        if(iType == 0x05)
+        {
+            return LoadFromAddressEx(pDynamic + offset + view_as<Address>(0x04), NumberType_Int32);
+        }
+
+        offset += view_as<Address>(0x08);
+    }
+
+    return Address_Null;
+}
+stock Address GetELFSymbolTableLinux(Address pBase)
+{
+    Address pDynamic = GetDynamicSectionLinux(pBase);
+
+    if(pDynamic == Address_Null)
+    {
+        return Address_Null;
+    }
+
+    Address offset;
+    int iType;
+
+    while((iType = LoadFromAddress(pDynamic + offset, NumberType_Int32)) != 0)
+    {
+        if(iType == 0x06)
+        {
+            return LoadFromAddressEx(pDynamic + offset + view_as<Address>(0x04), NumberType_Int32);
+        }
+
+        offset += view_as<Address>(0x08);
+    }
+
+    return Address_Null;
+}
+stock Address GetProcAddressLinux(Address pBase, const char[] sName )
+{
     Address offset;
     Address pStrTab;
     Address pSymTab;
     Address pStr;
+
+    Address pDynamic = GetDynamicSectionLinux(pBase);
+    int iType;
 
     while((iType = LoadFromAddress(pDynamic + offset, NumberType_Int32)) != 0)
     {
@@ -199,6 +251,8 @@ stock Address GetProcAddressLinux(Address pBase, const char[] sName )
         pStr = pStrTab + LoadFromAddressEx(pSymTab, NumberType_Int32);
         iLenStr = ReadString(pStr, sStr, sizeof sStr);
 
+        //LogError("GetProccAddress base = 0x%X str %s == %s?", pBase, sName, sStr);
+
         if(iLen == iLenStr)
         {
             if(!strcmp(sName, sStr))
@@ -214,29 +268,48 @@ stock Address GetProcAddressLinux(Address pBase, const char[] sName )
 }
 stock Address GetImportAddressLinux(Address pBase, const char[] sName )
 {
+    Address pDynamic = GetDynamicSectionLinux(pBase);
+    Address offset;
+
+    ArrayList list = new ArrayList();
+    int iType;
+
+    while((iType = LoadFromAddress(pDynamic + offset, NumberType_Int32)) != 0)
+    {
+        if(iType == 0x01)
+        {
+            list.Push(LoadFromAddressEx(pDynamic + offset + view_as<Address>(0x04), NumberType_Int32));
+        }
+
+        offset += view_as<Address>(0x08);
+    }
+
+
     StringMap hList = LinuxParseMapsFile();
-    StringMapSnapshot hSnap = hList.Snapshot();
-
+    
     Address pAddress;
-
+    Address pStrTab = GetELFStringTableLinux(pBase);
     char sLibrary[64];
 
     LibraryInfo info;
 
-    for(int x = 0; x < hSnap.Length; x++)
+    for(int x = 0; x < list.Length; x++)
     {
-        hSnap.GetKey(x, sLibrary, sizeof sLibrary);
-        hList.GetArray(sLibrary, info, sizeof(LibraryInfo));
+        offset = view_as<Address>(list.Get(x));
+        ReadString(pStrTab + offset, sLibrary, sizeof sLibrary);
 
-        pAddress = GetProcAddressLinux(info.base, sName);
-
-        if(pAddress != Address_Null && pAddress != info.base)
+        if(hList.GetArray(sLibrary, info, sizeof(LibraryInfo)))
         {
-            delete hSnap;
-            return pAddress;
+            pAddress = GetProcAddressLinux(info.base, sName);
+
+            if(pAddress != Address_Null && pAddress != info.base)
+            {
+                delete list;
+                return pAddress;
+            }
         }
     }
 
-    delete hSnap;
+    delete list;
     return Address_Null;
 }
