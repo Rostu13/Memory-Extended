@@ -229,6 +229,15 @@ stock Address FindPattern(Address base, any size, const int[] pattern, int iLeng
 
     return addr;
 }
+/*
+    4D 5A 90 00 03 00 00 00 04 00 00 00 FF FF 00 00 B8 00 00 00 00 00 00 00 40 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 50 01 00 00 56 4C 56 00 01 00 00 00 00 82 61 00 E9 D2 46 5F 
+    4C 4B 49 C2 06 85 A1 32 BD D2 A3 63 90 C9 3C D1 3F B8 C4 00 1E 7E 79 D2 7A 5E 31 9C F6 EC FE 52 7A 87 11 AA 19 9F C0 9F
+
+    FindPattern finds pattern from                      Address end: StartRegion + Size
+    FindBackPattern finds the required pattern using    Address end: EndRegion - Size
+    Address pPattern = FindBackPattern(GetModuleEnd("engine"), GetModuleSize("engine"), {0x4D, 0x5A, 0x90, 0x00, 0x03}, 5);
+*/
 stock Address FindBackPattern(Address base, any size, const int[] pattern, int iLength, int iOffset = 0)
 {
     Address addr;
