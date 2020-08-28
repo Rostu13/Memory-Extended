@@ -175,6 +175,7 @@ stock Address GetProcAddressLinux(Address pBase, const char[] sName )
     Address pStrTab;
     Address pSymTab;
     Address pStr;
+    Address pFinal;
 
     while((iType = LoadFromAddress(pDynamic + offset, NumberType_Int32)) != 0)
     {
@@ -203,7 +204,14 @@ stock Address GetProcAddressLinux(Address pBase, const char[] sName )
         {
             if(!strcmp(sName, sStr))
             {
-                return pBase + LoadFromAddressEx(pSymTab + view_as<Address>(0x04), NumberType_Int32);
+                pFinal = pBase + LoadFromAddressEx(pSymTab + view_as<Address>(0x04), NumberType_Int32);
+                
+                if(pFinal == pBase)
+                {
+                    return Address_Null;
+                }
+
+                return pFinal
             }
         }
 
