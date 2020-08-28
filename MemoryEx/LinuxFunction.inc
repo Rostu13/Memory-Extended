@@ -41,7 +41,7 @@ stock StringMap LinuxParseMapsFile(bool bRefresh = false)
         TrimString(sBuffer);
         iLength = strlen(sBuffer);
 
-        LogError(sBuffer);
+        //LogError(sBuffer);
 
         if(strcmp(sBuffer[iLength - 3], ".so") != 0)
         {

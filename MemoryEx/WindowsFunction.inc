@@ -26,7 +26,7 @@ stock void GetWindowsVersion(int& iMajorVer, int& iMinorVer)
 }
 stock Address GetPEB()
 {
-    static Address pPEB;
+	static Address pPEB;
 
 	static int PEBAsm[] =
 	{
@@ -39,21 +39,21 @@ stock Address GetPEB()
 		return pPEB;
 	}
 
-    int iOffset = FindSendPropInfo("CBaseEntity", "m_clrRender");
+	int iOffset = FindSendPropInfo("CBaseEntity", "m_clrRender");
 
-    if(iOffset == -1)
-    {
-        SetFailState("hm... m_clrRender not found?");
-    }
-	
+	if(iOffset == -1)
+	{
+		SetFailState("hm... m_clrRender not found?");
+	}
+
 	int iEntity = CreateEntityByName("trigger_push"); // `trigger_push is a brush entity available in all Source games.` =>  https://developer.valvesoftware.com/wiki/Trigger_push
-    Address pEntity = GetEntityAddress(iEntity) + view_as<Address>(iOffset);
+	Address pEntity = GetEntityAddress(iEntity) + view_as<Address>(iOffset);
 
-    SetEntDataArray(iEntity, iOffset, PEBAsm, sizeof(PEBAsm), 1);
-    StoreToAddress(pEntity, PEBAsm[0], NumberType_Int8); // for => SourceHook::SetMemAccess(addr, sizeof(uint8_t), SH_MEM_READ|SH_MEM_WRITE|SH_MEM_EXEC);
+	SetEntDataArray(iEntity, iOffset, PEBAsm, sizeof(PEBAsm), 1);
+	StoreToAddress(pEntity, PEBAsm[0], NumberType_Int8); // for => SourceHook::SetMemAccess(addr, sizeof(uint8_t), SH_MEM_READ|SH_MEM_WRITE|SH_MEM_EXEC);
 
-    pPEB = ASMSDKCall(pEntity);
-    AcceptEntityInput(iEntity, "Kill");
+	pPEB = ASMSDKCall(pEntity);
+	AcceptEntityInput(iEntity, "Kill");
 
 	return pPEB;
 }
