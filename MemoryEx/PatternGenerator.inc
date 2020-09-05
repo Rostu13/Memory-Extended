@@ -67,6 +67,37 @@ enum struct PatternEx
             pattern[x] = this.pattern.Get(x);
         }
     }
+    void GenerateString(char[] sBuffer, int iMaxLength)
+    {
+        char sTemp[8];
+
+        for(int x = 0; x < this.GetSize(); x++)
+        {
+            if((x * 0x04) + 0x04 >= iMaxLength)
+            {
+                break;
+            }
+
+            FormatEx(sTemp, sizeof sTemp, "\\x%02X", this.pattern.Get(x));
+            StrCat(sBuffer, iMaxLength, sTemp);
+        }
+    }
+    void UpdatePattern(int[] pattern, int iSize)
+    {
+        if(iSize > this.GetSize())
+        {
+            return;
+        }
+
+        for(int x = 0; x < iSize; x++)
+        {
+            this.pattern.Set(x, pattern[x]);
+        }
+    }
+    void Clear()
+    {
+        this.pattern.Clear();
+    }
     void Close()
     {
         if(this.pattern != null)
