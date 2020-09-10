@@ -3,7 +3,7 @@
 				Memory Extendвd
 
 	Author: Rostu 				[vk.com/rostu13 | Discord: Rostu#7917]
-	Version: 					3.0
+	Version: 					3.1
 
 	18.12.2019					First release [Windows Only]
 	22.12.2019					Version 1.1 [Windows Only]
@@ -13,12 +13,7 @@
 	08.06.2020					Version 3.0 [malloc/free]
 	20.08.2020					Version 3.1 [PatternGenerator]
 */
-/*
-Добавлена stock функция FindAllStrings, которая возвращает адреса необходимых строк в ArrayList
-Добавлен новый inc MemoryEx/PatternGenerator.inc => Для удобной генерации сигнатур с меняющимеся значениями.
-Полная смена логика получения PEB адреса, спасибо самолетик за сообщение о крашах [CSS].
 
-*/
 //#define MEMORY_EX_DBG
 
 #include <MemoryEx/ServerLibrary>
@@ -26,6 +21,7 @@
 #include <MemoryEx/ASM_Instruction>
 #include <MemoryEx/DynamicLibrary>
 #include <MemoryEx/MemoryAlloc>
+//#include <MemoryEx/Smx>
 
 #if defined MEMORY_EX_DBG
 #include <MemoryEx/DbgFunctions>
