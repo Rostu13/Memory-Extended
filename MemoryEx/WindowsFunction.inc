@@ -17,7 +17,7 @@ stock Address WindowsGetPEHeader(Address base)
 }
 stock Address WindowsParsePEBHeader(Address base)
 {
-    return LoadFromAddressEx(WindowsGetPEHeader(base) + view_as<Address>(0x50),  NumberType_Int32); // NT->OptionalHeader.SizeOfImage
+	return LoadFromAddressEx(WindowsGetPEHeader(base) + view_as<Address>(0x50),  NumberType_Int32); // NT->OptionalHeader.SizeOfImage
 }
 stock void GetWindowsVersion(int& iMajorVer, int& iMinorVer)
 {
@@ -67,13 +67,13 @@ stock StringMap WindowsGetDllList(bool bRefresh = false)
 		list = new StringMap();
 	}
 	else if(bRefresh)
-    {
-        list.Clear();
-    }
+	{
+		list.Clear();
+	}
 	else if(list.Size != 0)
-    {
-        return list;
-    }
+	{
+		return list;
+	}
 
 	Address PEB = GetPEB();
 
@@ -101,7 +101,7 @@ stock StringMap WindowsGetDllList(bool bRefresh = false)
 		if(iBase) // if (pldr_current->DllBase != NULL)
 		{
 			ReadUnicodeString(view_as<Address>(LoadFromAddress(pLdrCurrent + view_as<Address>(0x30), NumberType_Int32)), sLibrary, sizeof sLibrary); // pldr_current->FullDllName.Buffer
-	
+
 			for(int x = strlen(sLibrary) - 1; x >= 0; x--)
 			{
 				if(sLibrary[x] == '\\') 
@@ -153,45 +153,45 @@ enum struct ImportDiscription
 
 stock Address GetImportAddressWindows(Address pBase, const char[] sName )
 {
-    Address PE = pBase + view_as<Address>(LoadFromAddress(pBase + view_as<Address>(0x3C), NumberType_Int32));
+	Address PE = pBase + view_as<Address>(LoadFromAddress(pBase + view_as<Address>(0x3C), NumberType_Int32));
 
-    Address importTable = pBase +  view_as<Address>(LoadFromAddress(PE + view_as<Address>(0x80), NumberType_Int32));
-    Address importTableSize = view_as<Address>(LoadFromAddress(PE + view_as<Address>(0x84), NumberType_Int32));
-    int iSize = view_as<int>(importTableSize) / STRUCT_SIZE(ImportDiscription);
+	Address importTable = pBase +  view_as<Address>(LoadFromAddress(PE + view_as<Address>(0x80), NumberType_Int32));
+	Address importTableSize = view_as<Address>(LoadFromAddress(PE + view_as<Address>(0x84), NumberType_Int32));
+	int iSize = view_as<int>(importTableSize) / STRUCT_SIZE(ImportDiscription);
 
-    ImportDiscription disc;
-    //char sDll[64];
-    char sFunction[256];
+	ImportDiscription disc;
+	//char sDll[64];
+	char sFunction[256];
 
-    for(int x = 0; x < iSize; x++)
-    {
-        Address addr = importTable + view_as<Address>((STRUCT_SIZE(ImportDiscription) * x));
-        disc.FillInfo(pBase, addr);
-        //disc.GetName(sDll, sizeof sDll);
+	for(int x = 0; x < iSize; x++)
+	{
+		Address addr = importTable + view_as<Address>((STRUCT_SIZE(ImportDiscription) * x));
+		disc.FillInfo(pBase, addr);
+		//disc.GetName(sDll, sizeof sDll);
 
 
-        for(Address offset = Address_Null; offset >= Address_Null; offset += view_as<Address>(0x04)) // endless cycle
-        {
-            Address pFunctionStr = view_as<Address>(LoadFromAddress(disc.originalFirstThunk + offset, NumberType_Int32));
+		for(Address offset = Address_Null; offset >= Address_Null; offset += view_as<Address>(0x04)) // endless cycle
+		{
+			Address pFunctionStr = view_as<Address>(LoadFromAddress(disc.originalFirstThunk + offset, NumberType_Int32));
 
-            if(pFunctionStr == Address_Null)
-            {
-                break;
-            }
+			if(pFunctionStr == Address_Null)
+			{
+				break;
+			}
 
-            pFunctionStr += pBase;
+			pFunctionStr += pBase;
 
-            ReadString(pFunctionStr + view_as<Address>(0x02), sFunction, sizeof sFunction);
-            
-            if(!strcmp(sName, sFunction))
-            {
-                return view_as<Address>(LoadFromAddress(disc.firstThunk + offset, NumberType_Int32));
-            }
-            
-        }
-    }
+			ReadString(pFunctionStr + view_as<Address>(0x02), sFunction, sizeof sFunction);
+			
+			if(!strcmp(sName, sFunction))
+			{
+				return view_as<Address>(LoadFromAddress(disc.firstThunk + offset, NumberType_Int32));
+			}
+			
+		}
+	}
 
-    return Address_Null;
+	return Address_Null;
 }
 
 

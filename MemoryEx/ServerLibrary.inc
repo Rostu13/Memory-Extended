@@ -24,7 +24,7 @@ static const char g_sExts[][] =
 	".dll",
 	".so",
 	".so"
-}
+};
 
 enum OS
 {
@@ -178,7 +178,7 @@ stock Address GetImportAddress(const char[] sLibrary, const char[] sName )
 			return Address_Null;
 		}
 
-		return GetImportAddressWindows(pBase, sName)
+		return GetImportAddressWindows(pBase, sName);
 	}
 
 	return GetImportAddressLinux(Address_Null, sName);

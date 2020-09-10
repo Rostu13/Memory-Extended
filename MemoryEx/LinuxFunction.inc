@@ -141,8 +141,7 @@ static stock bool ParseElfHeader(Address base, int& iSize)
     }
 
     return true;
-    
-}
+    }
 stock Address GetProcAddressLinux(Address pBase, const char[] sName )
 {
      //From MemoryEx/LinuxFunction/ParseElfHeader
@@ -211,7 +210,7 @@ stock Address GetProcAddressLinux(Address pBase, const char[] sName )
                     return Address_Null;
                 }
 
-                return pFinal
+                return pFinal;
             }
         }
 

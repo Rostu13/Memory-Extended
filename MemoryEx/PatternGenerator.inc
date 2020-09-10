@@ -8,7 +8,7 @@
 enum struct PatternEx
 {
     ArrayList pattern;
-    
+
     void Init()
     {
         if(this.pattern != null)
@@ -26,7 +26,7 @@ enum struct PatternEx
     {
         this.pattern.Clear();
     }
-    
+
     void AddString(const char[] sBuffer, bool nullChar = false)
     {
         for(int x = 0; x < strlen(sBuffer); x++)
