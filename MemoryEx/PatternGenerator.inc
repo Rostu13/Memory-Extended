@@ -18,6 +18,15 @@ enum struct PatternEx
 
         this.pattern = new ArrayList();
     }
+    int GetSize()
+    {
+        return this.pattern.Length;
+    }
+    void Clear()
+    {
+        this.pattern.Clear();
+    }
+    
     void AddString(const char[] sBuffer, bool nullChar = false)
     {
         for(int x = 0; x < strlen(sBuffer); x++)
@@ -56,10 +65,6 @@ enum struct PatternEx
         this.pattern.Push((iValue >> 16)    & 0xFF);
         this.pattern.Push((iValue >> 24)    & 0xFF);
     }
-    int GetSize()
-    {
-        return this.pattern.Length;
-    }
     void Generate(int[] pattern, int iSize)
     {
         for(int x = 0; x < iSize; x++)
@@ -67,19 +72,15 @@ enum struct PatternEx
             pattern[x] = this.pattern.Get(x);
         }
     }
+    //Pattern: \x55\x8B\xEC\x6A\x00\x68\x2A\x2A\x2A\x2A\xE8\x2A\x2A\x2A\x2A\x8B\x4D\x08\x83\xC4\x08\x89\x01\x5D\xC3\xCC\xCC\xCC\xCC\xCC\xCC\xCC
     void GenerateString(char[] sBuffer, int iMaxLength)
     {
-        char sTemp[8];
-
         for(int x = 0; x < this.GetSize(); x++)
         {
-            if((x * 0x04) + 0x04 >= iMaxLength)
+            if(x < iMaxLength)
             {
-                break;
+                sBuffer[x] = view_as<char>(this.pattern.Get(x));
             }
-
-            FormatEx(sTemp, sizeof sTemp, "\\x%02X", this.pattern.Get(x));
-            StrCat(sBuffer, iMaxLength, sTemp);
         }
     }
     void UpdatePattern(int[] pattern, int iSize)
@@ -93,10 +94,6 @@ enum struct PatternEx
         {
             this.pattern.Set(x, pattern[x]);
         }
-    }
-    void Clear()
-    {
-        this.pattern.Clear();
     }
     void Close()
     {
