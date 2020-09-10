@@ -238,8 +238,9 @@ stock Address GetImportAddressLinux(Address pBase, const char[] sName )
 
         pAddress = GetProcAddressLinux(info.base, sName);
 
-        if(pAddress != Address_Null && pAddress != info.base)
+        if(pAddress != Address_Null)
         {
+            //PrintToServer("lib %s| base 0x%X", sLibrary, info.base);
             delete hSnap;
             return pAddress;
         }

@@ -144,14 +144,19 @@ stock Address GetProcAddress(const char[] sLibrary, const char[] sName )
 }
 stock Address GetImportAddress(const char[] sLibrary, const char[] sName )
 {
-	Address pBase = GetModuleHandle(sLibrary);
-
-	if(pBase == Address_Null)
+	if(GetServerOS() == OS_Windows)
 	{
-		return Address_Null;
+		Address pBase = GetModuleHandle(sLibrary);
+
+		if(pBase == Address_Null)
+		{
+			return Address_Null;
+		}
+
+		return GetImportAddressWindows(pBase, sName)
 	}
 
-	return GetServerOS() == OS_Windows ? GetImportAddressWindows(pBase, sName) : GetImportAddressLinux(pBase, sName);
+	return GetImportAddressLinux(Address_Null, sName);
 }
 stock int FindModule(const char[] sModule, char[] sResult, int iMaxLength)
 {
