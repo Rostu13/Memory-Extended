@@ -24,6 +24,7 @@ stock void GetWindowsVersion(int& iMajorVer, int& iMinorVer)
 	iMajorVer = LoadFromAddress(view_as<Address>(0x7FFE0000 + 0x26C), NumberType_Int32);
 	iMinorVer = LoadFromAddress(view_as<Address>(0x7FFE0000 + 0x270), NumberType_Int32);
 }
+
 stock Address GetPEB()
 {
 	static Address pPEB;

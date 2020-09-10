@@ -67,6 +67,31 @@ stock OS GetServerOS()
 
 	return os;
 }
+stock void CheckInitPEB()
+{
+	if(GetServerOS() != OS_Windows)
+	{
+		return;
+	}
+
+	if(!IsValidEntity(0)) // worldspawn
+	{
+		RequestFrame(CheckInitPEB);
+		return;
+	}
+
+	GetPEB();
+
+	Function func = GetFunctionByName(INVALID_HANDLE, "MemoryEx_InitPEB");
+
+	if(func == INVALID_FUNCTION)
+	{
+		return;
+	}
+
+	Call_StartFunction(INVALID_HANDLE, func);
+	Call_Finish();
+}
 stock StringMap GetListLibraries()
 {
 	return GetServerOS() == OS_Windows ? WindowsGetDllList() : LinuxParseMapsFile();
