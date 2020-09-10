@@ -5,6 +5,27 @@
 
 #include <MemoryEx/ServerLibrary>
 
+stock int GetProcessHeap()
+{
+    static Address pFunc;
+    static Handle h;
+
+    if(pFunc == Address_Null)
+    {
+        pFunc = GetProcAddress("kernel32", "GetProcessHeap");
+
+        if(pFunc != Address_Null)
+        {
+            StartPrepSDKCall(SDKCall_Static);
+            PrepSDKCall_SetAddress(pFunc);
+            PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+            h = EndPrepSDKCall();
+        }
+    }
+
+    return SDKCall(h);
+}
+
 stock Address VirtualAlloc(int iSize)
 {
     static Address pFunc;
@@ -14,12 +35,14 @@ stock Address VirtualAlloc(int iSize)
     {
         if(GetServerOS() == OS_Windows)
         {
-            pFunc = GetProcAddress("tier0", "g_pMemAlloc");
+            pFunc = GetImportAddress("kernel32", "HeapAlloc");
+
             if(pFunc != Address_Null)
             {
-                pFunc = LoadFromAddressEx(pFunc, NumberType_Int32);
-                StartPrepSDKCall(SDKCall_Raw);
-                PrepSDKCall_SetVirtual(1);
+                StartPrepSDKCall(SDKCall_Static);
+                PrepSDKCall_SetAddress(pFunc);
+                PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+                PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
                 PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
                 PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
                 h = EndPrepSDKCall();
@@ -40,7 +63,7 @@ stock Address VirtualAlloc(int iSize)
 
     if(GetServerOS() == OS_Windows)
     {
-        return SDKCall(h, pFunc, iSize);
+        return SDKCall(h, GetProcessHeap(), 0x00000008, iSize); // 0x08 == HEAP_ZERO_MEMORY => https://docs.microsoft.com/en-us/windows/win32/api/heapapi/nf-heapapi-heapalloc
     }
 
     return SDKCall(h, iSize);
@@ -55,12 +78,14 @@ stock void FreeMemory(Address pBase)
     {
         if(GetServerOS() == OS_Windows)
         {
-            pFunc = GetProcAddress("tier0", "g_pMemAlloc");
+            pFunc = GetImportAddress("kernel32", "HeapFree");
+
             if(pFunc != Address_Null)
             {
-                pFunc = LoadFromAddressEx(pFunc, NumberType_Int32);
-                StartPrepSDKCall(SDKCall_Raw);
-                PrepSDKCall_SetVirtual(4);
+                StartPrepSDKCall(SDKCall_Static);
+                PrepSDKCall_SetAddress(pFunc);
+                PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+                PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
                 PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
                 h = EndPrepSDKCall();
             }
@@ -79,7 +104,7 @@ stock void FreeMemory(Address pBase)
 
     if(GetServerOS() == OS_Windows)
     {
-        SDKCall(h, pFunc, pBase);
+        SDKCall(h, GetProcessHeap(), 0x00, pBase);
     }
     else
     {
