@@ -190,7 +190,7 @@ stock Address FindPattern(Address base, any size, const int[] pattern, int iLeng
     Address addr; // default = nullptr
     Address end = base + view_as<Address>(size);
 
-    PrintToServer("FindPattern base 0x%X size 0x%X", base, size);
+    //PrintToServer("FindPattern base 0x%X size 0x%X", base, size);
 
     int iByte;
     bool found;
