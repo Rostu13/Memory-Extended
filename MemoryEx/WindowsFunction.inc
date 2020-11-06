@@ -7,6 +7,19 @@
 #include <MemoryEx/Stocks>
 #include <MemoryEx/PatternGenerator>
 
+#define MEMORY_EX_WINAPI_MAX_ARGS 10
+
+#define WINAPI_ARGS_COUNT(%0) %0
+
+#define MEMORY_EX_WINAPI_RET_DEFAULT -2
+#define MEMORY_EX_WINAPI_INVALID_FUNC -3
+
+enum 
+{
+	WINAPI_FLAG_NONE = 0,
+	WINAPI_FLAG_NEED_RETURN
+}
+
 // for import table
 #define CALC_STRUCT_OFFSET(%0) view_as<Address>(%0 * 0x04)
 #define STRUCT_SIZE(%0) (sizeof(%0) * 0x04)

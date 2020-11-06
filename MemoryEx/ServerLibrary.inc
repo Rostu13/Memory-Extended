@@ -71,6 +71,7 @@ stock void CheckInitPEB()
 {
 	if(GetServerOS() != OS_Windows)
 	{
+		MemoryExInit();
 		return;
 	}
 
@@ -81,7 +82,10 @@ stock void CheckInitPEB()
 	}
 
 	GetPEB();
-
+	MemoryExInit();
+}
+stock void MemoryExInit()
+{
 	Function func = GetFunctionByName(INVALID_HANDLE, "MemoryEx_InitPEB");
 
 	if(func == INVALID_FUNCTION)
@@ -216,4 +220,62 @@ stock int FindModule(const char[] sModule, char[] sResult, int iMaxLength)
 
 	delete hSnap;
 	return res;
+}
+
+static stock const int g_hEmptyWinApiArgs[MEMORY_EX_WINAPI_MAX_ARGS] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+// return -2 if flags WINAPI_FLAG_NEED_RETURN is not found
+stock any WINAPI_CALL(const char[] libName, const char[] funcName, int flags = WINAPI_FLAG_NONE, int parms = 0, any arg1 = 0, any arg2 = 0, any arg3 = 0, any arg4 = 0, any arg5 = 0, any arg6 = 0, any arg7 = 0, any arg8 = 0, any arg9 = 0, any arg10 = 0)
+{
+	Address pFunc = GetProcAddress(libName, funcName);
+	Handle h;
+
+	if(pFunc == Address_Null)
+	{
+		return MEMORY_EX_WINAPI_INVALID_FUNC;
+	}
+
+	StartPrepSDKCall(SDKCall_Static);
+	PrepSDKCall_SetAddress(pFunc);
+
+	for(int x = 0; x < parms; x++)
+	{
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	}
+
+	if(flags & WINAPI_FLAG_NEED_RETURN)
+	{
+		PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+	}
+
+	h = EndPrepSDKCall();
+
+	any result;
+
+	switch(parms)
+	{
+		case 0: result = SDKCall(h)
+		case 1: result 	= SDKCall(h, arg1);
+		case 2: result 	= SDKCall(h, arg1, arg2);
+		case 3: result 	= SDKCall(h, arg1, arg2, arg3);
+		case 4: result 	= SDKCall(h, arg1, arg2, arg3, arg4);
+		case 5: result 	= SDKCall(h, arg1, arg2, arg3, arg4, arg5);
+		case 6: result 	= SDKCall(h, arg1, arg2, arg3, arg4, arg5, arg6);
+		case 7: result 	= SDKCall(h, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+		case 8: result 	= SDKCall(h, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+		case 9: result 	= SDKCall(h, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+		case 10: result = SDKCall(h, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+	}
+
+	if(h != null)
+	{
+		delete h;
+	}
+
+	if(flags & WINAPI_FLAG_NEED_RETURN)
+	{
+		return result;
+	}
+
+	return MEMORY_EX_WINAPI_RET_DEFAULT;
 }
