@@ -67,7 +67,9 @@ enum struct PatternEx
     }
     void Generate(int[] pattern, int iSize)
     {
-        for(int x = 0; x < iSize; x++)
+        int iMaxLength = iSize > this.GetSize() ? this.GetSize() : iSize;
+
+        for(int x = 0; x < iMaxLength; x++)
         {
             pattern[x] = this.pattern.Get(x);
         }
