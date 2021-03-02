@@ -16,9 +16,44 @@ stock any ASMSDKCall(Address base)
     delete h;
     return res;
 }
-stock Address LoadFromAddressEx(Address addr, NumberType size)
+stock Address LoadFromAddressEx(Address base, NumberType size)
 {
-	return view_as<Address>(LoadFromAddress(addr, size));
+	return view_as<Address>(LoadFromAddress(base, size));
+}
+stock int LoadFromAddressInt24(Address base)
+{
+	int iByte[3];
+	iByte[0] = LoadFromAddress(base, NumberType_Int8);
+	iByte[1] = LoadFromAddress(base + view_as<Address>(1), NumberType_Int8);
+	iByte[2] = LoadFromAddress(base + view_as<Address>(2), NumberType_Int8);
+	return iByte[0] + (iByte[1] << 8) + (iByte[2] << 16);
+}
+stock void StoreToAddressArray(Address base, int[] data, int iSize)
+{
+	for( int i = 0; i < iSize; i++ )
+	{
+		StoreToAddress(base + view_as<Address>(i), data[i], NumberType_Int8);
+	}
+	// alternate:	g_hMem.SetAddr(base); 	g_hMem.WriteData(data, iSize);
+}
+stock int GetByte(int iNum32, int iByteIndex)
+{
+	int ret;
+	switch( iByteIndex )
+	{
+		case 1: { ret = (iNum32 & 0xFF); }
+		case 2: { ret = (iNum32 & 0xFF00) >> 8; }
+		case 3: { ret = (iNum32 & 0xFF0000) >> 16; }
+		case 4: { ret = (iNum32 & 0xFF000000) >> 24; }
+	}
+	return ret;
+}
+stock void ArrayPushDword(int[] array, int &index, int data)
+{
+	array[index++] = GetByte(data, 1);
+	array[index++] = GetByte(data, 2);
+	array[index++] = GetByte(data, 3);
+	array[index++] = GetByte(data, 4);
 }
 stock int ReadString(Address base, char[] sResult, int iMaxLength)
 {

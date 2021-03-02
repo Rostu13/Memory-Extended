@@ -100,6 +100,23 @@ stock StringMap GetListLibraries()
 {
 	return GetServerOS() == OS_Windows ? WindowsGetDllList() : LinuxParseMapsFile();
 }
+stock StringMap GetListModulePath()
+{
+	return GetServerOS() == OS_Windows ? WindowsGetDllList( .bAddressAsKey = true) : LinuxParseMapsFile( .bAddressAsKey = true);
+}
+stock bool GetModulePath(Address pBase, char[] sName, int max_size)
+{
+	char sAddr[16];
+	StringMap ModulePath = GetListModulePath();
+	
+	IntToString(view_as<int>(pBase), sAddr, sizeof(sAddr));
+	
+	if (!ModulePath.GetString(sAddr, sName, max_size))
+	{
+		return false;
+	}
+	return true;
+}
 stock Address GetModuleHandle(const char[] sName)
 {
 	ModuleInfo info;

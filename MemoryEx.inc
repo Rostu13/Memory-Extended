@@ -1,9 +1,9 @@
 /*
 	[Extending opportunities for work with memory in SourcePawn]
-				Memory Extendвd
+				Memory Extended
 
 	Author: Rostu 				[vk.com/rostu13 | Discord: Rostu#7917]
-	Version: 					3.1
+	Version: 					3.1.4
 
 	18.12.2019					First release [Windows Only]
 	22.12.2019					Version 1.1 [Windows Only]
@@ -12,15 +12,26 @@
 	05.05.2020					Version 2.7 [Export/Import Tables]
 	08.06.2020					Version 3.0 [malloc/free]
 	20.08.2020					Version 3.1 [PatternGenerator]
+	14.12.2020					Version 3.1.1 [MemoryAlloc - fix for VirtualAlloc/FreeMemory (Win)]
+	29.12.2020					Version 3.1.2 [GameDataEx]
+	26.02.2021					Version 3.1.3 [MemSearcher - IsValidAddress]
+	02.03.2021					Version 3.1.4 [BinaryFile, Fixed GetProcAddress (Linux), new Stocks]
 */
 
 //#define MEMORY_EX_DBG
+
+#if defined _MemoryEx_included
+ #endinput
+#endif
+#define _MemoryEx_included
 
 #include <MemoryEx/ServerLibrary>
 #include <MemoryEx/BaseMemory>
 #include <MemoryEx/ASM_Instruction>
 #include <MemoryEx/DynamicLibrary>
 #include <MemoryEx/MemoryAlloc>
+#include <MemoryEx/GameDataEx>
+#include <MemoryEx/MemSearcher>
 //#include <MemoryEx/Smx>
 
 #if defined MEMORY_EX_DBG
