@@ -3,8 +3,9 @@
 				GameDataEx
 
 	Author: Dragokas 			[vk.com/drago_kas | Discord: Dragokas#1453]
-	Version: 					1.3
+	Version: 					1.4
 	
+	04.03.2021					Added mapping "engine" library to "engine_srv" for Linux/Mac.
 	01.03.2021					Added SMC-based parsing of gamedata file to bypass "Hex-bug": https://github.com/alliedmodders/sourcemod/issues/1417
 								Added support for obtaining the address of Linux function by @name.
 	06.02.2021					Added mapping "server" library to "server_srv" for Linux/Mac.
@@ -100,9 +101,16 @@ methodmap GameDataEx < KeyValues
 		if( this.JumpSection(name, "Signatures") )
 		{
 			this.GetString("library", library, size);
-			if( GetServerOS() != OS_Windows && strcmp(library, "server") == 0 )
+			if( GetServerOS() != OS_Windows )
 			{
-				strcopy(library, size, "server_srv");
+				if( strcmp(library, "server") == 0 )
+				{
+					strcopy(library, size, "server_srv");
+				}
+				else if( strcmp(library, "engine") == 0 )
+				{
+					strcopy(library, size, "engine_srv");
+				}
 			}
 			return library[0] != 0;
 		}

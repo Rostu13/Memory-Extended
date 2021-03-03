@@ -3,7 +3,7 @@
 				Memory Extended
 
 	Author: Rostu 				[vk.com/rostu13 | Discord: Rostu#7917]
-	Version: 					3.1.4
+	Version: 					3.1.5
 
 	18.12.2019					First release [Windows Only]
 	22.12.2019					Version 1.1 [Windows Only]
