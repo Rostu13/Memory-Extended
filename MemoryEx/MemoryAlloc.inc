@@ -13,7 +13,7 @@ stock int GetProcessHeap()
     if(pFunc == Address_Null)
     {
         pFunc = GetProcAddress("kernel32", "GetProcessHeap");
-
+		
         if(pFunc != Address_Null)
         {
             StartPrepSDKCall(SDKCall_Static);
@@ -26,17 +26,27 @@ stock int GetProcessHeap()
     return SDKCall(h);
 }
 
+Address GetImportAddressWindows_Base(char[] func)
+{
+	ModuleInfo info;
+	StringMap list = WindowsGetDllList(false);
+	list.GetArray("srcds.exe", info, sizeof(ModuleInfo));
+	Address pBase = info.base;
+	return GetImportAddressWindows(pBase, func);
+}
+
 stock Address VirtualAlloc(int iSize)
 {
     static Address pFunc;
     static Handle h;
-
+	
     if(pFunc == Address_Null)
     {
         if(GetServerOS() == OS_Windows)
         {
-            pFunc = GetImportAddress("kernel32", "HeapAlloc");
-
+            //pFunc = GetImportAddress("kernel32", "HeapAlloc");
+            pFunc = GetImportAddressWindows_Base("HeapAlloc");
+            
             if(pFunc != Address_Null)
             {
                 StartPrepSDKCall(SDKCall_Static);
@@ -78,7 +88,8 @@ stock void FreeMemory(Address pBase)
     {
         if(GetServerOS() == OS_Windows)
         {
-            pFunc = GetImportAddress("kernel32", "HeapFree");
+            //pFunc = GetImportAddress("kernel32", "HeapFree");
+            pFunc = GetImportAddressWindows_Base("HeapFree");
 
             if(pFunc != Address_Null)
             {
