@@ -3,8 +3,9 @@
 				GameDataEx
 
 	Author: Dragokas 			[vk.com/drago_kas | Discord: Dragokas#1453]
-	Version: 					1.4
+	Version: 					1.5
 	
+	07.04.2021					Added mapping "matchmaking_ds" library to "matchmaking_ds_srv" for Linux/Mac.
 	04.03.2021					Added mapping "engine" library to "engine_srv" for Linux/Mac.
 	01.03.2021					Added SMC-based parsing of gamedata file to bypass "Hex-bug": https://github.com/alliedmodders/sourcemod/issues/1417
 								Added support for obtaining the address of Linux function by @name.
@@ -111,6 +112,10 @@ methodmap GameDataEx < KeyValues
 				{
 					strcopy(library, size, "engine_srv");
 				}
+				else if( strcmp(library, "matchmaking_ds") == 0 )
+				{
+					strcopy(library, size, "matchmaking_ds_srv");
+				}
 			}
 			return library[0] != 0;
 		}
@@ -161,7 +166,7 @@ methodmap GameDataEx < KeyValues
 		return 0;
 	}
 	
-	public Pointer GetAddress(char[] name)
+	public Address GetAddress(char[] name)
 	{
 		char library[64], sig[256];
 		int pattern[256], iSize;
@@ -178,7 +183,7 @@ methodmap GameDataEx < KeyValues
 				return lib.FindPattern(library, pattern, iSize);
 			}
 		}
-		return PTR(Address_Null);
+		return Address_Null;
 	}
 	
 	public int GetOffset(char[] name)

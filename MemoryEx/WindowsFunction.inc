@@ -177,7 +177,7 @@ stock StringMap WindowsGetDllList(bool bRefresh = false, bool bAddressAsKey = fa
 //My thread with an analysis of all this
 //https://hlmod.ru/threads/urok-chtenie-import-table-s-pomoschju-sourcepawn.52289/
 
-enum struct ImportDiscription
+enum struct ImportDescription
 {
 	Address originalFirstThunk;
 	int timeDateStamp;
@@ -187,11 +187,11 @@ enum struct ImportDiscription
 
 	void FillInfo(Address base, Address addr)
 	{
-		this.originalFirstThunk = base + view_as<Address>(LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDiscription::originalFirstThunk), NumberType_Int32));
-		this.timeDateStamp      = LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDiscription::timeDateStamp), NumberType_Int32);
-		this.forwarderChaine   	= LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDiscription::forwarderChaine), NumberType_Int32);
-		this.dllName            = base + view_as<Address>(LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDiscription::dllName), NumberType_Int32));
-		this.firstThunk         = base + view_as<Address>(LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDiscription::firstThunk), NumberType_Int32));
+		this.originalFirstThunk = base + view_as<Address>(LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDescription::originalFirstThunk), NumberType_Int32));
+		this.timeDateStamp      = LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDescription::timeDateStamp), NumberType_Int32);
+		this.forwarderChaine   	= LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDescription::forwarderChaine), NumberType_Int32);
+		this.dllName            = base + view_as<Address>(LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDescription::dllName), NumberType_Int32));
+		this.firstThunk         = base + view_as<Address>(LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDescription::firstThunk), NumberType_Int32));
 	}
 	void GetName(char[] sBuffer, int iMaxLength)
 	{
@@ -206,15 +206,15 @@ stock Address GetImportAddressWindows(Address pBase, const char[] sName )
 
 	Address importTable = pBase +  view_as<Address>(LoadFromAddress(PE + view_as<Address>(0x80), NumberType_Int32));
 	Address importTableSize = view_as<Address>(LoadFromAddress(PE + view_as<Address>(0x84), NumberType_Int32));
-	int iSize = view_as<int>(importTableSize) / STRUCT_SIZE(ImportDiscription);
+	int iSize = view_as<int>(importTableSize) / STRUCT_SIZE(ImportDescription);
 
-	ImportDiscription disc;
+	ImportDescription disc;
 	//char sDll[64];
 	char sFunction[256];
 
 	for(int x = 0; x < iSize; x++)
 	{
-		Address addr = importTable + view_as<Address>((STRUCT_SIZE(ImportDiscription) * x));
+		Address addr = importTable + view_as<Address>((STRUCT_SIZE(ImportDescription) * x));
 		disc.FillInfo(pBase, addr);
 		//disc.GetName(sDll, sizeof sDll);
 

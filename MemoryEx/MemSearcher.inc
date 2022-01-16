@@ -1,8 +1,22 @@
+/*
+	[Memory Searcher]
+
+	Author: Dragokas 			[vk.com/drago_kas | Discord: Dragokas#1453]
+	Version: 					1.0
+	
+	02.03.2021					First release
+*/
+
+#if defined _MemoryEx_MemSearcher_include_
+  #endinput
+#endif
+
+#define _MemoryEx_MemSearcher_include_
 
 enum struct MEMORY_BASIC_INFORMATION32
 {
-    Pointer BaseAddress;
-    Pointer AllocationBase;
+    Address BaseAddress;
+    Address AllocationBase;
     int AllocationProtect;
     int RegionSize;
     int State;
@@ -23,32 +37,32 @@ stock bool IsValidAddress(Address addr, int &numbytes)
 bool IsValidAddressWindows(Address addr, int &numbytes)
 {
 	MEMORY_BASIC_INFORMATION32 mbi;
-	Address min, max, check = PTR(0x10000); // default lowest memory address
+	Address min, max, check = ADDR(0x10000); // default lowest memory address
 	
 	while( VirtualQuery(check, mbi) )
 	{
 		if( mbi.State == MEM_COMMIT && ((mbi.Protect & (PAGE_GUARD | PAGE_NOACCESS)) == 0))
 		{
 			min = mbi.BaseAddress;
-			max = mbi.BaseAddress + PTR(mbi.RegionSize - 1);
+			max = mbi.BaseAddress + ADDR(mbi.RegionSize - 1);
 		
 			if( addr >= min && addr <= max )
 			{
-				if( addr + PTR(numbytes - 1) > max )
+				if( addr + ADDR(numbytes - 1) > max )
 				{
 					numbytes = view_as<int>(max - addr) + 1;
 				}
 				return true;
 			}
 		}
-		check += PTR(mbi.RegionSize);
+		check += ADDR(mbi.RegionSize);
 	}
 	return false;
 }
 
 int VirtualQuery(Address address, MEMORY_BASIC_INFORMATION32 mbi)
 {
-	static Pointer pFunc;
+	static Address pFunc;
 	static Handle h;
 
 	if( pFunc == Address_Null )
@@ -68,7 +82,7 @@ int VirtualQuery(Address address, MEMORY_BASIC_INFORMATION32 mbi)
 	}
 	
 	int iReturn, iSize = 32;
-	Pointer pmbi = VirtualAlloc(iSize);
+	Address pmbi = VirtualAlloc(iSize);
 	if( pmbi )
 	{
 		iReturn = SDKCall(h, address, pmbi, iSize);
@@ -122,12 +136,12 @@ bool IsValidAddressLinux(Address addr, int &numbytes)
 				valid = true;
 				break;
 			}
-			min = PTR(HexToDec(addr_start));
-			max = PTR(HexToDec(range[pos]) - 1);
+			min = ADDR(HexToDec(addr_start));
+			max = ADDR(HexToDec(range[pos]) - 1);
 			
 			if( addr >= min && addr <= max )
 			{
-				if( addr + PTR(numbytes - 1) > max )
+				if( addr + ADDR(numbytes - 1) > max )
 				{
 					numbytes = view_as<int>(max - addr) + 1;
 				}

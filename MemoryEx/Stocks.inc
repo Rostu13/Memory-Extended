@@ -4,6 +4,12 @@
 #endif
 #define _MemoryEx_Stocks_include_
 
+#define LA_8(%0) Deref(%0, NumberType_Int8)
+#define LA_16(%0) Deref(%0, NumberType_Int16)
+#define LA_24(%0) LoadFromAddressInt24(%0)
+#define LA_32(%0) Deref(%0, NumberType_Int32)
+
+
 stock any ASMSDKCall(Address base)
 {
     StartPrepSDKCall(SDKCall_Static);
@@ -16,11 +22,27 @@ stock any ASMSDKCall(Address base)
     delete h;
     return res;
 }
-stock Address LoadFromAddressEx(Address base, NumberType size)
+stock int Deref(any Addr, NumberType size = NumberType_Int32)
+{
+	if( Addr )
+	{
+		return LoadFromAddress(view_as<Address>(Addr), size);
+	}
+	return 0;
+}
+stock Address DerefEx(any Addr)
+{
+	if( Addr )
+	{
+		return view_as<Address>(LoadFromAddress(Addr, NumberType_Int32));
+	}
+	return Address_Null;
+}
+stock Address LoadFromAddressEx(any base, NumberType size)
 {
 	return view_as<Address>(LoadFromAddress(base, size));
 }
-stock int LoadFromAddressInt24(Address base)
+stock int LoadFromAddressInt24(any base)
 {
 	int iByte[3];
 	iByte[0] = LoadFromAddress(base, NumberType_Int8);
@@ -418,6 +440,5 @@ stock bool StrContainsEx(const char[] sStr, const char[] sSubStr)
             return false;
         }
     }
-
     return true;
 }

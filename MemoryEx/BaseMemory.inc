@@ -4,13 +4,13 @@
 #endif
 #define _MemoryEx_BaseMemory_include_
 
-
 #include <sdktools>
 
-#define Pointer Address
-#define nullptr Address_Null
+#define ADDR(%0) view_as<Address>(%0)
 
-#define PTR(%0) view_as<Pointer>(%0)
+#define Pointer Address // deprecated
+#define nullptr Address_Null // deprecated
+#define PTR(%0) view_as<Pointer>(%0) // deprecated
 
 enum
 {
@@ -31,7 +31,7 @@ enum
 
 enum struct BaseMemory
 {
-    Pointer pAddrBase;
+    Address pAddrBase;
 
     void SetAddr(any address)
 	{
@@ -40,9 +40,9 @@ enum struct BaseMemory
 			return;
 		}
 
-		this.pAddrBase = PTR(address);
+		this.pAddrBase = ADDR(address);
 	}
-	Pointer GetAddr()
+	Address GetAddr()
 	{
 		return this.pAddrBase;
 	}
@@ -53,11 +53,11 @@ enum struct BaseMemory
 
 	int ReadByte(int iOffset = 0)
 	{
-		return LoadFromAddress(this.pAddrBase + PTR(iOffset), NumberType_Int8);
+		return LoadFromAddress(this.pAddrBase + ADDR(iOffset), NumberType_Int8);
 	}
 	void WriteByte(any iByte, int iOffset = 0,  int flags = MemoryEx_NoNeedAdd)
 	{
-		Pointer addr = this.GetAddr() + PTR(iOffset);
+		Address addr = this.GetAddr() + ADDR(iOffset);
 
 		StoreToAddress(addr, iByte, NumberType_Int8);
 		
@@ -69,11 +69,11 @@ enum struct BaseMemory
 	
 	int ReadWord(int iOffset = 0)
 	{
-		return LoadFromAddress(this.pAddrBase + PTR(iOffset), NumberType_Int16);
+		return LoadFromAddress(this.pAddrBase + ADDR(iOffset), NumberType_Int16);
 	}
 	void WriteWord(any iWord, int iOffset = 0,  int flags = MemoryEx_NoNeedAdd)
 	{
-		Pointer addr = this.GetAddr() + PTR(iOffset);
+		Address addr = this.GetAddr() + ADDR(iOffset);
 
 		StoreToAddress(addr, iWord, NumberType_Int16);
 
@@ -85,11 +85,11 @@ enum struct BaseMemory
 	
 	int ReadInt	(int iOffset = 0)
 	{
-		return LoadFromAddress(this.pAddrBase + PTR(iOffset), NumberType_Int32);
+		return LoadFromAddress(this.pAddrBase + ADDR(iOffset), NumberType_Int32);
 	}
 	void WriteInt(any iNumber, int iOffset = 0, int flags = MemoryEx_NoNeedAdd)
 	{
-		Pointer addr = this.GetAddr() + PTR(iOffset);
+		Address addr = this.GetAddr() + ADDR(iOffset);
 
 		StoreToAddress(addr, iNumber, NumberType_Int32);
 

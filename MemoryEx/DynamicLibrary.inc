@@ -15,7 +15,7 @@ enum struct DynamicLibrary
 	{
 		return GetListLibraries();
 	}
-	Pointer GetModuleHandle(const char[] sName)
+	Address GetModuleHandle(const char[] sName)
 	{
 		return GetModuleHandle(sName);
 	}
@@ -23,15 +23,15 @@ enum struct DynamicLibrary
 	{
 		return GetModuleSize(sName);
 	}
-	Pointer GetEndModule(const char[] sName)
+	Address GetEndModule(const char[] sName)
 	{
 		return GetModuleEnd(sName);
 	}
-    Pointer GetProcAddress(const char[] sLibrary, const char[] sName)
+    Address GetProcAddress(const char[] sLibrary, const char[] sName)
 	{
 		return GetProcAddress(sLibrary, sName);
 	}
-	Pointer GetImportAddress(const char[] sLibrary, const char[] sName)
+	Address GetImportAddress(const char[] sLibrary, const char[] sName)
 	{
 		return GetImportAddress(sLibrary, sName);
 	}
@@ -39,7 +39,7 @@ enum struct DynamicLibrary
 	{
 		return FindModule(sModule, sResult, iMaxLength);
 	}
-	Pointer FindPattern(const char[] sModule, const int[] sPattern, int iLength, int iOffset = 0)
+	Address FindPattern(const char[] sModule, const int[] sPattern, int iLength, int iOffset = 0)
 	{
 		ModuleInfo info;
 
@@ -50,7 +50,7 @@ enum struct DynamicLibrary
 
 		return FindPattern(info.base, info.size, sPattern, iLength, iOffset);
 	}
-	Pointer FindString(const char[] sModule, const char[] sString)
+	Address FindString(const char[] sModule, const char[] sString)
 	{
 		ModuleInfo info;
 		
@@ -74,7 +74,7 @@ enum struct DynamicLibrary
 
 		return FindAllStrings(info.base, info.size, sString);
 	}
-	Pointer FindUnicodeString(const char[] sModule, const char[] sString)
+	Address FindUnicodeString(const char[] sModule, const char[] sString)
 	{
 		ModuleInfo info;
 
@@ -85,7 +85,7 @@ enum struct DynamicLibrary
 
 		return FindUnicodeModuleString(info.base, info.size, sString);
 	}
-	Pointer FindValue(const char[] sModule, any iValue, int iNextByte = 0x2A ) // iNextByte - to help
+	Address FindValue(const char[] sModule, any iValue, int iNextByte = 0x2A ) // iNextByte - to help
 	{
 		ModuleInfo info;
 
@@ -104,7 +104,7 @@ enum struct DynamicLibrary
 
 		return FindPattern(info.base, info.size, pattern, 5);
 	}
-	Pointer FindValueEx(const char[] sModule, any iValue, const int[] iPattern, int iSize)
+	Address FindValueEx(const char[] sModule, any iValue, const int[] iPattern, int iSize)
 	{
 		ModuleInfo info;
 

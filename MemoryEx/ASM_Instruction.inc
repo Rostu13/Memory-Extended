@@ -6,6 +6,7 @@
 
 
 #include <MemoryEx/BaseMemory>
+#include <MemoryEx/Ldasm>
 
 
 enum ASMRegister
@@ -24,15 +25,26 @@ enum struct ASMInstructions
 {
 	BaseMemory mem;
 
-	void Set(Pointer adr)
+	void Set(Address adr)
 	{
 		this.mem.pAddrBase = adr;
 	}
-	Pointer Get()
+	Address Get()
 	{
 		return this.mem.pAddrBase;
 	}
-
+	int SizeOfCode(any offset = 0)
+	{
+		return ASM_SizeOfCode(this.mem.pAddrBase + offset);
+	}
+	int SizeOfProc(any offset = 0)
+	{
+		return ASM_SizeOfProc(this.mem.pAddrBase + offset);
+	}
+	bool IsRelativeCmd(any offset = 0)
+	{
+		return ASM_IsRelativeCmd(this.mem.pAddrBase + offset);
+	}
 	void PushRegister(ASMRegister reg)
 	{
 		this.mem.WriteByte(0x50 + view_as<int>(reg), 	_, 	MemoryEx_AddAfterWrite);

@@ -1,0 +1,7 @@
+3.1.6
+[ASM_Instruction.inc] Added SizeOfCode, SizeOfProc - to calculate the length of opcode instruction / procedure (thanks to Ms-Rem & The Trick).
+[ASM_Instruction.inc] Added IsRelativeCmd - to check whether JMP is relative.
+#define PTR & Pointer are deprecated (to prevent confusion with C-Pointers). Use ADDR instead.
+#define nullptr is deprecated. Use Address_Null instead.
+Added define: ADDR - to view as Address.
+Added defines: LA_8, LA_16, LA_24, LA_32 - shortcuts to load 1-4 byte size data from address.
