@@ -2,9 +2,12 @@
 	[Memory Searcher]
 
 	Author: Dragokas 			[vk.com/drago_kas | Discord: Dragokas#1453]
-	Version: 					1.0
+	Version: 					1.1
 	
 	02.03.2021					First release
+	19.01.2022					Allow to accept "any" value
+								Verify read access (Win)
+								Added function: "IsValidPointer"
 */
 
 #if defined _MemoryEx_MemSearcher_include_
@@ -27,11 +30,36 @@ enum struct MEMORY_BASIC_INFORMATION32
 const int MEM_COMMIT = 0x1000;
 const int PAGE_GUARD = 0x100;
 const int PAGE_NOACCESS = 0x01;
+const int PAGE_READONLY = 0x02;
+const int PAGE_READWRITE = 0x04;
+const int PAGE_EXECUTE = 0x10;
+const int PAGE_EXECUTE_READ = 0x20;
+const int PAGE_EXECUTE_READWRITE = 0x40;
 
 
-stock bool IsValidAddress(Address addr, int &numbytes)
+/*
+	Checks if memory address is accessible to read at least 1 byte
+
+	@address - address of memory.
+	@numbytes (read/write) - number of bytes to check. 
+	
+	@return:
+		true - if at least 1 byte is accessible.
+			if the number of accessible bytes are lower than numbytes specified, the numbytes will return the maximum bytes it is possible to access.
+		false - otherwise
+*/
+stock bool IsValidAddress(any address, int &numbytes)
 {
-	return GetServerOS() == OS_Windows ? IsValidAddressWindows(addr, numbytes) : IsValidAddressLinux(addr, numbytes);
+	return GetServerOS() == OS_Windows ? IsValidAddressWindows(address, numbytes) : IsValidAddressLinux(address, numbytes);
+}
+
+/*
+	Checks if memory address is accessible to read 4 bytes
+*/
+stock bool IsValidPointer(any pointer)
+{
+	int numbytes = 4;
+	return IsValidAddress(pointer, numbytes) && numbytes == 4;
 }
 
 bool IsValidAddressWindows(Address addr, int &numbytes)
@@ -43,16 +71,19 @@ bool IsValidAddressWindows(Address addr, int &numbytes)
 	{
 		if( mbi.State == MEM_COMMIT && ((mbi.Protect & (PAGE_GUARD | PAGE_NOACCESS)) == 0))
 		{
-			min = mbi.BaseAddress;
-			max = mbi.BaseAddress + ADDR(mbi.RegionSize - 1);
-		
-			if( addr >= min && addr <= max )
+			if( mbi.Protect & (PAGE_READONLY | PAGE_READWRITE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE) )
 			{
-				if( addr + ADDR(numbytes - 1) > max )
+				min = mbi.BaseAddress;
+				max = mbi.BaseAddress + ADDR(mbi.RegionSize - 1);
+			
+				if( addr >= min && addr <= max )
 				{
-					numbytes = view_as<int>(max - addr) + 1;
+					if( addr + ADDR(numbytes - 1) > max )
+					{
+						numbytes = view_as<int>(max - addr) + 1;
+					}
+					return true;
 				}
-				return true;
 			}
 		}
 		check += ADDR(mbi.RegionSize);
