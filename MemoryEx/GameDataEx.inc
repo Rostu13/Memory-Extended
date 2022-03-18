@@ -3,8 +3,9 @@
 				GameDataEx
 
 	Author: Dragokas 			[vk.com/drago_kas | Discord: Dragokas#1453]
-	Version: 					1.5
+	Version: 					1.6
 	
+	18.03.2022					Fixed "engine" library mapping in Left 4 Dead 1.
 	07.04.2021					Added mapping "matchmaking_ds" library to "matchmaking_ds_srv" for Linux/Mac.
 	04.03.2021					Added mapping "engine" library to "engine_srv" for Linux/Mac.
 	01.03.2021					Added SMC-based parsing of gamedata file to bypass "Hex-bug": https://github.com/alliedmodders/sourcemod/issues/1417
@@ -108,7 +109,7 @@ methodmap GameDataEx < KeyValues
 				{
 					strcopy(library, size, "server_srv");
 				}
-				else if( strcmp(library, "engine") == 0 )
+				else if( strcmp(library, "engine") == 0 && GetEngineVersion() != Engine_Left4Dead )
 				{
 					strcopy(library, size, "engine_srv");
 				}
