@@ -3,7 +3,7 @@
 				Memory Extended
 
 	Author: Rostu 				[vk.com/rostu13 | Discord: Rostu#7917]
-	Version: 					3.1.7
+	Version: 					3.1.9
 
 	18.12.2019					First release [Windows Only]
 	22.12.2019					Version 1.1 [Windows Only]
@@ -25,6 +25,8 @@
 		Added define: ADDR - to view as Address.
 		Added defines: LA_8, LA_16, LA_24, LA_32 - shortcuts to load 1-4 byte size data from address.
 	19.01.2022					Version 3.1.7: MemSearcher: Added "IsValidPointer", better read access check.
+	18.03.2022					Version 3.1.8: Fixed "engine" library mapping.
+	08.07.2022					Version 3.1.9: Fixed warnings on SM 1.11. VirtualQuery optimizations (Windows).
 */
 
 //#define MEMORY_EX_DBG

@@ -95,6 +95,7 @@ int VirtualQuery(Address address, MEMORY_BASIC_INFORMATION32 mbi)
 {
 	static Address pFunc;
 	static Handle h;
+	static Address pmbi;
 
 	if( pFunc == Address_Null )
 	{
@@ -113,7 +114,11 @@ int VirtualQuery(Address address, MEMORY_BASIC_INFORMATION32 mbi)
 	}
 	
 	int iReturn, iSize = 32;
-	Address pmbi = VirtualAlloc(iSize);
+	
+	if( !pmbi )
+	{
+		pmbi = VirtualAlloc(iSize);
+	}
 	if( pmbi )
 	{
 		iReturn = SDKCall(h, address, pmbi, iSize);
@@ -127,7 +132,7 @@ int VirtualQuery(Address address, MEMORY_BASIC_INFORMATION32 mbi)
 			mbi.Protect 			= LoadFromAddress(pmbi + view_as<Address>(20), NumberType_Int32);
 			mbi.Type 				= LoadFromAddress(pmbi + view_as<Address>(24), NumberType_Int32);
 		}
-		FreeMemory(pmbi);
+		//FreeMemory(pmbi);
 	}
 	else {
 		LogError("Failed to allocate the memory.");
@@ -141,11 +146,11 @@ bool IsValidAddressLinux(Address addr, int &numbytes)
 	Address min, max;
 	int pos;
 	bool valid;
-
+	
 	File file = OpenFile("file:///proc/self/maps", "rt"); // thanks to @Rostu
 	if( file )
 	{
-		while( file.ReadLine(sBuffer, sizeof sBuffer) )
+		while( file.ReadLine(sBuffer, sizeof(sBuffer)) )
 		{
 			TrimString(sBuffer);
 			pos = BreakString(sBuffer, range, sizeof(range));

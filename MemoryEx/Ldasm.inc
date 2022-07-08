@@ -651,5 +651,5 @@ stock bool ASM_IsRelativeCmd(Address pOpcode)
 	int Flags;
 	if (LA_8(pOpcode) == 0x0F) Flags = OpcodeFlagsExt[LA_8(pOpcode + ADDR(1))];
 		else Flags = OpcodeFlags[LA_8(pOpcode)];
-	return (Flags & OP_REL32);
+	return ((Flags & OP_REL32) != 0);
 }
