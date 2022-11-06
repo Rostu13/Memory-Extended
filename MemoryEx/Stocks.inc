@@ -94,8 +94,6 @@ stock int ReadString(Address base, char[] sResult, int iMaxLength)
 
         sResult[x] = iByte;
     }
-
-
     return x;
 }
 stock int ReadUnicodeString(Address base, char[] sResult, int iMaxLength)
@@ -125,25 +123,21 @@ stock int WriteString(Address base, const char[] sString, bool bNull = true)
     {
         StoreToAddress(base + view_as<Address>(x), sString[x], NumberType_Int8);
     }
-
     if(bNull)
     {
         StoreToAddress(base + view_as<Address>(x), sString[x], NumberType_Int8);
     }
-
     return x;
 }
 stock Address FindModuleString(Address base, any size, const char[] sString)
 {
-    int iLength = strlen(sString) + 1;
-    int[] pattern = new int[iLength];
+    int iLength = strlen(sString);
+    int[] pattern = new int[iLength+1];
 
-    for(int x = 0; x < iLength - 1; x++)
+    for(int x = 0; x < iLength; x++)
     {
         pattern[x] = sString[x];
     }
-
-    pattern[iLength] = 0x00;
 
     return FindPattern(base, size, pattern, iLength);
 }

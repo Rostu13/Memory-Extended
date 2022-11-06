@@ -3,7 +3,8 @@
 				Memory Extended
 
 	Author: Rostu 				[vk.com/rostu13 | Discord: Rostu#7917]
-	Version: 					3.1.9
+	Fork: Dragokas				[vk.com/drago_kas | Discord: Dragokas#1453]
+	Version: 					3.1.10
 
 	18.12.2019					First release [Windows Only]
 	22.12.2019					Version 1.1 [Windows Only]
@@ -27,6 +28,7 @@
 	19.01.2022					Version 3.1.7: MemSearcher: Added "IsValidPointer", better read access check.
 	18.03.2022					Version 3.1.8: Fixed "engine" library mapping.
 	08.07.2022					Version 3.1.9: Fixed warnings on SM 1.11. VirtualQuery optimizations (Windows).
+	06.11.2022					Version 3.1.10: Fixed "array out of bounds" in FindModuleString.
 */
 
 //#define MEMORY_EX_DBG
