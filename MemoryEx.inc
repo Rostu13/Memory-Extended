@@ -4,7 +4,7 @@
 
 	Author: Rostu 				[vk.com/rostu13 | Discord: Rostu#7917]
 	Fork: Dragokas				[vk.com/drago_kas | Discord: Dragokas#1453]
-	Version: 					3.1.10
+	Version: 					3.1.11
 
 	18.12.2019					First release [Windows Only]
 	22.12.2019					Version 1.1 [Windows Only]
@@ -29,6 +29,7 @@
 	18.03.2022					Version 3.1.8: Fixed "engine" library mapping.
 	08.07.2022					Version 3.1.9: Fixed warnings on SM 1.11. VirtualQuery optimizations (Windows).
 	06.11.2022					Version 3.1.10: Fixed "array out of bounds" in FindModuleString.
+	01.02.2023					Version 3.1.11: Added "test x,x" (0x85) assembler instruction.
 */
 
 //#define MEMORY_EX_DBG
