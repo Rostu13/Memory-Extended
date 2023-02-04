@@ -4,6 +4,12 @@
 #endif
 #define _MemoryEx_Stocks_include_
 
+#define LA_8(%0) Deref(%0, NumberType_Int8)
+#define LA_16(%0) Deref(%0, NumberType_Int16)
+#define LA_24(%0) LoadFromAddressInt24(%0)
+#define LA_32(%0) Deref(%0, NumberType_Int32)
+
+
 stock any ASMSDKCall(Address base)
 {
     StartPrepSDKCall(SDKCall_Static);
@@ -16,9 +22,60 @@ stock any ASMSDKCall(Address base)
     delete h;
     return res;
 }
-stock Address LoadFromAddressEx(Address addr, NumberType size)
+stock int Deref(any Addr, NumberType size = NumberType_Int32)
 {
-	return view_as<Address>(LoadFromAddress(addr, size));
+	if( Addr )
+	{
+		return LoadFromAddress(view_as<Address>(Addr), size);
+	}
+	return 0;
+}
+stock Address DerefEx(any Addr)
+{
+	if( Addr )
+	{
+		return view_as<Address>(LoadFromAddress(Addr, NumberType_Int32));
+	}
+	return Address_Null;
+}
+stock Address LoadFromAddressEx(any base, NumberType size)
+{
+	return view_as<Address>(LoadFromAddress(base, size));
+}
+stock int LoadFromAddressInt24(any base)
+{
+	int iByte[3];
+	iByte[0] = LoadFromAddress(base, NumberType_Int8);
+	iByte[1] = LoadFromAddress(base + view_as<Address>(1), NumberType_Int8);
+	iByte[2] = LoadFromAddress(base + view_as<Address>(2), NumberType_Int8);
+	return iByte[0] + (iByte[1] << 8) + (iByte[2] << 16);
+}
+stock void StoreToAddressArray(Address base, int[] data, int iSize)
+{
+	for( int i = 0; i < iSize; i++ )
+	{
+		StoreToAddress(base + view_as<Address>(i), data[i], NumberType_Int8);
+	}
+	// alternate:	g_hMem.SetAddr(base); 	g_hMem.WriteData(data, iSize);
+}
+stock int GetByte(int iNum32, int iByteIndex)
+{
+	int ret;
+	switch( iByteIndex )
+	{
+		case 1: { ret = (iNum32 & 0xFF); }
+		case 2: { ret = (iNum32 & 0xFF00) >> 8; }
+		case 3: { ret = (iNum32 & 0xFF0000) >> 16; }
+		case 4: { ret = (iNum32 & 0xFF000000) >> 24; }
+	}
+	return ret;
+}
+stock void ArrayPushDword(int[] array, int &index, int data)
+{
+	array[index++] = GetByte(data, 1);
+	array[index++] = GetByte(data, 2);
+	array[index++] = GetByte(data, 3);
+	array[index++] = GetByte(data, 4);
 }
 stock int ReadString(Address base, char[] sResult, int iMaxLength)
 {
@@ -37,8 +94,6 @@ stock int ReadString(Address base, char[] sResult, int iMaxLength)
 
         sResult[x] = iByte;
     }
-
-
     return x;
 }
 stock int ReadUnicodeString(Address base, char[] sResult, int iMaxLength)
@@ -68,25 +123,21 @@ stock int WriteString(Address base, const char[] sString, bool bNull = true)
     {
         StoreToAddress(base + view_as<Address>(x), sString[x], NumberType_Int8);
     }
-
     if(bNull)
     {
         StoreToAddress(base + view_as<Address>(x), sString[x], NumberType_Int8);
     }
-
     return x;
 }
 stock Address FindModuleString(Address base, any size, const char[] sString)
 {
-    int iLength = strlen(sString) + 1;
-    int[] pattern = new int[iLength];
+    int iLength = strlen(sString);
+    int[] pattern = new int[iLength+1];
 
-    for(int x = 0; x < iLength - 1; x++)
+    for(int x = 0; x < iLength; x++)
     {
         pattern[x] = sString[x];
     }
-
-    pattern[iLength] = 0x00;
 
     return FindPattern(base, size, pattern, iLength);
 }
@@ -383,6 +434,5 @@ stock bool StrContainsEx(const char[] sStr, const char[] sSubStr)
             return false;
         }
     }
-
     return true;
 }

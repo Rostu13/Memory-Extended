@@ -250,6 +250,12 @@ stock Address GetProcAddressLinux(Address pBase, const char[] sName )
     {
         pStr = pStrTab + LoadFromAddressEx(pSymTab, NumberType_Int32);
         iLenStr = ReadString(pStr, sStr, sizeof sStr);
+	}
+
+    for(int x = 0; x < iSize; x++)
+    {
+        pStr = pStrTab + LoadFromAddressEx(pSymTab, NumberType_Int32);
+        iLenStr = ReadString(pStr, sStr, sizeof sStr);
 
         //LogError("GetProccAddress base = 0x%X str %s == %s?", pBase, sName, sStr);
 

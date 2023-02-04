@@ -71,31 +71,60 @@ stock Address GetPEB()
 
 	return pPEB;
 }
-stock StringMap WindowsGetDllList(bool bRefresh = false)
+stock StringMap WindowsGetDllList(bool bRefresh = false, bool bAddressAsKey = false)
 {
-	static StringMap list;
-
-	if(list == null)
+	static StringMap list, modules;
+	
+	/*
+		bAddressAsKey -> true
+			StringMap
+				key		== Base address
+				value 	== Module path
+		
+		bAddressAsKey -> false
+			StringMap
+				key		== Module name
+				value	== LibraryInfo struct { base; size }
+	*/
+	
+	if(bAddressAsKey)
 	{
-		list = new StringMap();
+		if(modules == null)
+		{
+			modules = new StringMap();
+		}
+		else if(bRefresh)
+		{
+			modules.Clear();
+		}
+		else if(modules.Size != 0)
+		{
+			return modules;
+		}
 	}
-	else if(bRefresh)
-	{
-		list.Clear();
-	}
-	else if(list.Size != 0)
-	{
-		return list;
+	else {
+		if(list == null)
+		{
+			list = new StringMap();
+		}
+		else if(bRefresh)
+		{
+			list.Clear();
+		}
+		else if(list.Size != 0)
+		{
+			return list;
+		}
 	}
 
 	Address PEB = GetPEB();
 
 	if(PEB == Address_Null)
 	{
-		return list;
+		return bAddressAsKey ? modules : list;
 	}
 
-	char sLibrary[255];
+	char sLibrary[255], sBase[16];
 
 	Address pLdrData = view_as<Address>(LoadFromAddress(PEB + view_as<Address>(0x0C), NumberType_Int32)); // PPEB_LDR_DATA pldr_data = *(PPEB_LDR_DATA*)(peb + 0x0C);
 
@@ -114,34 +143,41 @@ stock StringMap WindowsGetDllList(bool bRefresh = false)
 		if(iBase) // if (pldr_current->DllBase != NULL)
 		{
 			ReadUnicodeString(view_as<Address>(LoadFromAddress(pLdrCurrent + view_as<Address>(0x30), NumberType_Int32)), sLibrary, sizeof sLibrary); // pldr_current->FullDllName.Buffer
-
-			for(int x = strlen(sLibrary) - 1; x >= 0; x--)
+			
+			if(bAddressAsKey)
 			{
-				if(sLibrary[x] == '\\') 
-				{
-					strcopy(sLibrary, sizeof sLibrary, sLibrary[x + 1]);
-					break;
-				}
-				sLibrary[x] = CharToLower(sLibrary[x]);
+				IntToString(iBase, sBase, sizeof(sBase));
+				modules.SetString(sBase, sLibrary);
 			}
-
-			tmp[0] = iBase;
-			tmp[1] = view_as<int>(WindowsParsePEBHeader(view_as<Address>(iBase)));
-
-			list.SetArray(sLibrary, tmp, sizeof(tmp));
+			else {
+				for(int x = strlen(sLibrary) - 1; x >= 0; x--)
+				{
+					if(sLibrary[x] == '\\') 
+					{
+						strcopy(sLibrary, sizeof sLibrary, sLibrary[x + 1]);
+						break;
+					}
+					sLibrary[x] = CharToLower(sLibrary[x]);
+				}
+				
+				tmp[0] = iBase;
+				tmp[1] = view_as<int>(WindowsParsePEBHeader(view_as<Address>(iBase)));
+	
+				list.SetArray(sLibrary, tmp, sizeof(tmp));
+			}
 		}
 
 		//pLdrPrev = pLdrCurrent;
 		pLdrCurrent = view_as<Address>(LoadFromAddress(pLdrCurrent + view_as<Address>(0x0C), NumberType_Int32) - 0x08);
 	}
 	while(pLdrCurrent != pLdrFirst);
-	return list;
+	return bAddressAsKey ? modules : list;
 }
 
 //My thread with an analysis of all this
 //https://hlmod.ru/threads/urok-chtenie-import-table-s-pomoschju-sourcepawn.52289/
 
-enum struct ImportDiscription
+enum struct ImportDescription
 {
 	Address originalFirstThunk;
 	int timeDateStamp;
@@ -151,11 +187,11 @@ enum struct ImportDiscription
 
 	void FillInfo(Address base, Address addr)
 	{
-		this.originalFirstThunk = base + view_as<Address>(LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDiscription::originalFirstThunk), NumberType_Int32));
-		this.timeDateStamp      = LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDiscription::timeDateStamp), NumberType_Int32);
-		this.forwarderChaine   	= LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDiscription::forwarderChaine), NumberType_Int32);
-		this.dllName            = base + view_as<Address>(LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDiscription::dllName), NumberType_Int32));
-		this.firstThunk         = base + view_as<Address>(LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDiscription::firstThunk), NumberType_Int32));
+		this.originalFirstThunk = base + view_as<Address>(LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDescription::originalFirstThunk), NumberType_Int32));
+		this.timeDateStamp      = LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDescription::timeDateStamp), NumberType_Int32);
+		this.forwarderChaine   	= LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDescription::forwarderChaine), NumberType_Int32);
+		this.dllName            = base + view_as<Address>(LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDescription::dllName), NumberType_Int32));
+		this.firstThunk         = base + view_as<Address>(LoadFromAddress(addr + CALC_STRUCT_OFFSET(ImportDescription::firstThunk), NumberType_Int32));
 	}
 	void GetName(char[] sBuffer, int iMaxLength)
 	{
@@ -170,15 +206,15 @@ stock Address GetImportAddressWindows(Address pBase, const char[] sName )
 
 	Address importTable = pBase +  view_as<Address>(LoadFromAddress(PE + view_as<Address>(0x80), NumberType_Int32));
 	Address importTableSize = view_as<Address>(LoadFromAddress(PE + view_as<Address>(0x84), NumberType_Int32));
-	int iSize = view_as<int>(importTableSize) / STRUCT_SIZE(ImportDiscription);
+	int iSize = view_as<int>(importTableSize) / STRUCT_SIZE(ImportDescription);
 
-	ImportDiscription disc;
+	ImportDescription disc;
 	//char sDll[64];
 	char sFunction[256];
 
 	for(int x = 0; x < iSize; x++)
 	{
-		Address addr = importTable + view_as<Address>((STRUCT_SIZE(ImportDiscription) * x));
+		Address addr = importTable + view_as<Address>((STRUCT_SIZE(ImportDescription) * x));
 		disc.FillInfo(pBase, addr);
 		//disc.GetName(sDll, sizeof sDll);
 
